@@ -18,11 +18,28 @@ func TestServer(t *testing.T) {
 	}
 
 	// Filling channel with 100.000 numbers to be executed
-	for i := 0; i < 100000; i++ {
+	for i := 0; i < 10000000; i++ {
 		channel <- i
 	}
 
 	t.Logf("took total: %v", time.Now().UnixMilli()-startTime.UnixMilli())
+}
+
+func TestNullPointerException(t *testing.T) {
+	given := 10
+
+	if given != 5 {
+
+	}
+}
+
+func TestFunctional(t *testing.T) {
+}
+
+func TestFunc(t *testing.T) {
+	var env []string
+
+	env = append(env, "this string")
 }
 
 func someTask(id int, data chan int) {

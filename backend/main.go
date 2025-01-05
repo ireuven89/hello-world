@@ -1,14 +1,18 @@
 package main
 
 import (
-	"github.com/ireuven89/hello-world/routes"
-	"github.com/labstack/echo"
+	"github.com/ireuven89/hello-world/backend/server"
+
+	"log"
 )
 
 func main() {
-	e := echo.New()
 
-	routes.AssignRoutes(e)
+	mainServer, err := server.New()
 
-	e.Logger.Fatal("failed to initiate server", e.Start(":7000"))
+	if err != nil {
+		panic(err)
+	}
+
+	log.Fatal("failed to initiate server", mainServer.Echo.Start(":7000"))
 }

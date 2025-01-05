@@ -1,0 +1,136 @@
+services:
+  backend:
+    build: .
+    image: backend
+    container_name: backend_server
+    ports:
+      - "7000:7000"
+    environment:
+      - DEBUG=${DEBUG}
+      - USERS_DB_USER=root
+      - USERS_DB_PASSWORD=${USERS_DB_PASSWORD}
+      - ITEMS_DB_PASSWORD=${ITEMS_DB_PASSWORD}
+      - USERS_DB_HOST=${USERS_DB_HOST}
+      - ITEMS_DB_HOST=${ITEMS_DB_HOST}
+      - ITEMS_DB_USER=root
+      - ELASTIC_HOST=${ELASTIC_HOST}
+      - ELASTIC_USER_NAME=${ELASTIC_USER_NAME}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - RABBIT_URL=${RABBIT_URL}
+    depends_on:
+      elastic:
+        condition: service_healthy
+      items-db:
+        condition: service_healthy
+      users-db:
+        condition: service_healthy
+      rabbit:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: curl -s http://localhost:7000 >/dev/null || exit 1
+      retries: 3
+      interval: 30s
+      start_period: 10s
+  elastic:
+    image: elasticsearch:7.17.26
+    container_name: elastic_db
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - MEM_LIMIT=1073741824
+    healthcheck:
+      test: curl -s http://localhost:9200 >/dev/null || exit 1
+      retries: 3
+      interval: 30s
+  users-db:
+    image: mysql:latest
+    container_name: users_db
+    ports:
+      - "3308:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${USERS_DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=users
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u root --password=${MYSQL_ROOT_PASSWORD}
+      start_period: 10s
+      interval: 30s
+      retries: 3
+    volumes:
+      - /var/lib/mysql
+  items-db:
+    image: mysql:latest
+    container_name: items_db
+    ports:
+      - "3309:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${ITEMS_DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=items
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u root --password=${MYSQL_ROOT_PASSWORD}
+      start_period: 10s
+      interval: 30s
+      retries: 3
+    volumes:
+      - /var/lib/mysql
+  client-db:
+    image: mysql:latest
+    container_name: clients_db
+    ports:
+      - "3310:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${CLIENTS_DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=clients
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u root --password=${MYSQL_ROOT_PASSWORD}
+      start_period: 10s
+      interval: 30s
+      retries: 3
+  jenkins:
+    image: jenkins/jenkins:jdk21
+    container_name: jenkins
+    depends_on:
+      - backend
+    privileged: true
+    ports:
+      - "50000:50000"
+      - "8080:8080"
+    volumes:
+      - /var/lib/jenkins
+  rabbit:
+    image: rabbitmq:management-alpine
+    container_name: rabbit-mq
+    ports:
+      - "15672:15672"
+      - '5672:5672'
+    volumes:
+      - /var/lib/rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD}
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      retries: 3
+      interval: 30s
+      start_period: 10s
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - /var/lib/mongo
+    environment:
+      - MONGO_URL=${MONGO_URL}
+      - MONGO_PASSWORD=${MONGO_PASSWORD}
+    healthcheck:
+      test: mongosh localhost:27017/test --quiet || exit 1
+      interval: 10s
+      timeout: 1m
+      retries: 3
+      start_period: 5s
+

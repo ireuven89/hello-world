@@ -1,0 +1,6 @@
+{
+  "elastic_url_dev": "https://dev.elastic.com:9200",
+  "elastic_url_local": "http://localhost:9200",
+  "elastic_url_staging": "https://staging.elastic.com:9200",
+  "elastic_url_prod": "https://elastic-prod.com"
+}

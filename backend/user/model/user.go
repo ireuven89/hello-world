@@ -1,17 +1,33 @@
-package user
+package model
 
 import (
 	"github.com/ireuven89/hello-world/backend/routes"
 )
 
 type User struct {
-	ID     int    `json:"ID" db:"id"`
-	Name   string `json:"Name" db:"name"`
-	Region string `json:"Region" db:"region"`
+	ID   int    `json:"-" db:"id"`
+	Uuid string `json:"uuid" db:"uuid"`
+	Name string `json:"name" db:"name"`
 }
 
-type UserRequest struct {
+func (u *User) IsEmpty() bool {
+
+	return u.ID == 0 && u.Uuid == "" && u.Name == ""
+}
+
+type UserFetchInput struct {
 	routes.Pagination
-	Name   string `json:"Name"`
-	Region string `json:"Region"`
+	Name   string `json:"name"`
+	Uuid   string `json:"uuid"`
+	Region string `json:"region"`
+}
+
+type UserUpsertInput struct {
+	Uuid   string `json:"uuid"`
+	Name   string `json:"name"`
+	Region string `json:"region"`
+}
+
+type DeleteUserInput struct {
+	Uuid string `json:"uuid"`
 }

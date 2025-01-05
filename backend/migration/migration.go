@@ -1,15 +1,13 @@
-package migrate_db
+package migration
 
 import (
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/ireuven89/hello-world/backend/environment"
 )
 
-func Migrate() error {
-	url := environment.Variables.DbUrl
+func Migrate(url string) error {
 	service, err := migrate.New("/migrations/", url)
 
-	service.m
+	err = service.Up()
 
 	if err != nil {
 		return err
