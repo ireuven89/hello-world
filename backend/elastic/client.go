@@ -134,12 +134,12 @@ func (s *Service) Insert(ctx context.Context, index string, doc map[string]inter
 		return err
 	}
 
-	s.logger.Debug("Insert operation: ", zap.Any("response is ", res))
+	s.logger.Debug("Set operation: ", zap.Any("response is ", res))
 
 	return nil
 }
 
-func (s *Service) InsertBulk(index string, docs map[string][]byte) error {
+func (s *Service) InsertBulk(index string, docs map[string][]interface{}) error {
 	var body bytes.Buffer
 	if err := json.NewEncoder(&body).Encode(docs); err != nil {
 		log.Error(err)

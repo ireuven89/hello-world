@@ -17,6 +17,9 @@ services:
       - ELASTIC_USER_NAME=${ELASTIC_USER_NAME}
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - RABBIT_URL=${RABBIT_URL}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_USER=${REDIS_USER}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     depends_on:
       elastic:
         condition: service_healthy
@@ -27,6 +30,8 @@ services:
       rabbit:
         condition: service_healthy
       mongo:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: curl -s http://localhost:7000 >/dev/null || exit 1
@@ -133,4 +138,17 @@ services:
       timeout: 1m
       retries: 3
       start_period: 5s
+  redis:
+    image: redis:bookworm
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - /var/lib/redis
+    healthcheck:
+       test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+       interval: 10s
+       timeout: 1m
+       retries: 3
+       start_period: 5s
 

@@ -2,48 +2,70 @@ package db
 
 import (
 	"database/sql"
-	"github.com/golang/mock/gomock"
-	"github.com/ido50/sqlz"
-	mock_db "github.com/ireuven89/hello-world/backend/db/mock"
-	"github.com/jmoiron/sqlx"
+	"errors"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
-
 	"testing"
 )
 
-func getMockDB() *sqlz.DB {
-
-	return &sqlz.DB{
-		DB: sqlx.NewDb(&sql.DB{}, "mock"),
-	}
+type MockGooseService struct {
+	mock mock.Mock
 }
 
-type DB interface {
-	Begin() (sqlx.Tx, error)
+func (mg *MockGooseService) lockDB() (*sql.Tx, error) {
+	args := mg.mock.Called()
+
+	res, ok := args.Get(0).(*sql.Tx)
+
+	if !ok {
+		return nil, args.Error(1)
+	}
+
+	return res, args.Error(1)
+}
+
+func (mg *MockGooseService) unlockDB(transaction *sql.Tx) error {
+	args := mg.mock.Called(transaction)
+
+	return args.Error(0)
+}
+
+func (mg *MockGooseService) migrateDB() error {
+	args := mg.mock.Called()
+
+	return args.Error(0)
 }
 
 func TestLockingDB(t *testing.T) {
-	ctrl := gomock.Controller{T: t}
-	mdb := mock_db.NewMockMigrationService(&ctrl)
+	mgs := MockGooseService{mock: mock.Mock{}}
 
-	mdb.EXPECT()
+	mgs.mock.On("lockDB").Return(nil, errors.New("failed locking db"))
+
+	tx, err := mgs.lockDB()
+
+	assert.NotNil(t, err)
+	assert.Nil(t, tx)
+
 }
 
-func TestUnlockDB(t *testing.T) {
-	logger := zap.Logger{}
-	goose := New(getMockDB(), logger)
+func TestUnlockingDB(t *testing.T) {
+	mgs := MockGooseService{mock: mock.Mock{}}
+	tx := sql.Tx{}
 
-	tx, err := goose.lockDB()
+	mgs.mock.On("unlockDB", &tx).Return(nil)
 
-	assert.Nil(t, err)
-
-	err = goose.unlockDB(tx)
+	err := mgs.unlockDB(&tx)
 
 	assert.Nil(t, err)
 }
 
-func TestMigration(t *testing.T) {
+func TestMigrateDB(t *testing.T) {
+	mgs := MockGooseService{mock: mock.Mock{}}
 
+	mgs.mock.On("migrateDB").Return(nil)
+
+	err := mgs.migrateDB()
+
+	assert.Nil(t, err)
 }

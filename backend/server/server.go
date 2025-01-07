@@ -10,6 +10,7 @@ import (
 	"github.com/ireuven89/hello-world/backend/environment"
 	"github.com/ireuven89/hello-world/backend/item"
 	"github.com/ireuven89/hello-world/backend/rabbit"
+	"github.com/ireuven89/hello-world/backend/redis"
 	"github.com/ireuven89/hello-world/backend/routes"
 	"github.com/ireuven89/hello-world/backend/user"
 	"github.com/labstack/echo/v4"
@@ -25,6 +26,7 @@ type Server struct {
 	Elastic      *elastic.Service
 	AWSClient    *aws.Client
 	RabbitClient *rabbit.Client
+	Redis        *redis.Service
 }
 
 func New() (*Server, error) {
@@ -33,6 +35,12 @@ func New() (*Server, error) {
 	loggerConfig := zap.NewDevelopmentConfig()
 	loggerConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	logger, err := loggerConfig.Build()
+
+	if err != nil {
+		return nil, err
+	}
+
+	redisClient, err := redis.New(logger)
 
 	if err != nil {
 		return nil, err
@@ -88,5 +96,5 @@ func New() (*Server, error) {
 
 	logger.Info("Server has been initialized")
 
-	return &Server{UserDB: usersDB, ItemDB: itemsDB, Logger: logger, Echo: echoServer, AWSClient: awsclient, Elastic: es, RabbitClient: rabbitClient}, nil
+	return &Server{Redis: redisClient, UserDB: usersDB, ItemDB: itemsDB, Logger: logger, Echo: echoServer, AWSClient: awsclient, Elastic: es, RabbitClient: rabbitClient}, nil
 }

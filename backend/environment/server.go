@@ -20,6 +20,9 @@ type EnvironmentVariables struct {
 	ElasticUsername string `envconfig:"ELASTIC_USER_NAME" default:"none"`
 	ElasticPassword string `envconfig:"ELASTIC_PASSWORD" default:"none"`
 	AwsRegion       string `envconfig:"AWS_REGION" default:"none"`
+	RedisHost       string `envconfig:"REDIS_HOST" default:"none"`
+	RedisUser       string `envconfig:"REDIS_USER" default:"none"`
+	RedisPassword   string `envconfig:"REDIS_PASSWORD" default:"none"`
 }
 
 var Variables EnvironmentVariables

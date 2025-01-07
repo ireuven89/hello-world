@@ -38,7 +38,6 @@ func New(db *sql.DB, logger *zap.Logger, migrationsDir string) *Service { // set
 
 // Run - this function migrates DB
 func (ms *Service) Run() error {
-
 	tx, err := ms.lockDB()
 
 	if err != nil {
@@ -117,12 +116,6 @@ func (ms *Service) migrateDB() error {
 	}
 	end := time.Now()
 	ms.logger.Info("finished migration time to run: ", zap.Any("seconds", end.Second()-start.Second()))
-
-	return nil
-}
-
-// validateDB - this function validates the DB
-func (ms *Service) validateDB() error {
 
 	return nil
 }
