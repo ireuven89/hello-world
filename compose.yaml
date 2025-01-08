@@ -48,10 +48,12 @@ services:
       - discovery.type=single-node
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - MEM_LIMIT=1073741824
+      - xpack.security.enabled=true
     healthcheck:
       test: curl -s http://localhost:9200 >/dev/null || exit 1
       retries: 3
       interval: 30s
+
   users-db:
     image: mysql:latest
     container_name: users_db
