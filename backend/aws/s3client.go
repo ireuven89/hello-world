@@ -2,12 +2,13 @@ package aws
 
 import (
 	"errors"
+	"os"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/ireuven89/hello-world/backend/environment"
 	"go.uber.org/zap"
-	"os"
 )
 
 type AWSClient interface {

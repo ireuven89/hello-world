@@ -3,10 +3,10 @@ package db
 import (
 	"database/sql"
 	"errors"
-	"github.com/stretchr/testify/mock"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"testing"
+	"github.com/stretchr/testify/mock"
 )
 
 type MockGooseService struct {

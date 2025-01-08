@@ -3,10 +3,11 @@ package redis
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/ireuven89/hello-world/backend/environment"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
-	"time"
 )
 
 type Redis interface {

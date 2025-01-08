@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/ireuven89/hello-world/backend/tests/config"
-	"github.com/ireuven89/hello-world/backend/tests/utils"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"testing"
+
+	"github.com/ireuven89/hello-world/backend/tests/config"
+	"github.com/ireuven89/hello-world/backend/tests/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 var configJson config.ConfigurationJson

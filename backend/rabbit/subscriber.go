@@ -2,6 +2,7 @@ package rabbit
 
 import (
 	"fmt"
+
 	"go.uber.org/zap"
 )
 

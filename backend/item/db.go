@@ -2,9 +2,10 @@ package item
 
 import (
 	"database/sql"
+	"path/filepath"
+
 	"github.com/go-sql-driver/mysql"
 	"github.com/ireuven89/hello-world/backend/environment"
-	"path/filepath"
 )
 
 func MustNewDB() (*sql.DB, string, error) {

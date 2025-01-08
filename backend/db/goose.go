@@ -1,12 +1,14 @@
 package db
 
 import (
+	"time"
+
 	"github.com/ireuven89/hello-world/backend/db/model"
 	"github.com/pressly/goose/v3"
-	"time"
 
 	"database/sql"
 	"fmt"
+
 	"go.uber.org/zap"
 )
 

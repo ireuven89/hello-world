@@ -3,9 +3,10 @@ package routes
 import (
 	"database/sql"
 	"encoding/json"
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 	echoSwagger "github.com/swaggo/echo-swagger"
-	"net/http"
 )
 
 // @title Swagger Example API

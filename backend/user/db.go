@@ -2,9 +2,10 @@ package user
 
 import (
 	"database/sql"
+	"path/filepath"
+
 	"github.com/go-sql-driver/mysql"
 	"github.com/ireuven89/hello-world/backend/environment"
-	"path/filepath"
 )
 
 // MustNewDB - returns the db connection, the migrations directory of the db, and an error if anything failed

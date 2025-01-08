@@ -2,13 +2,13 @@ package bider
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/ido50/sqlz"
 	"github.com/ireuven89/hello-world/backend/bider/model"
 	dbmodel "github.com/ireuven89/hello-world/backend/db/model"
 	"github.com/ireuven89/hello-world/backend/db/utils"
 	"go.uber.org/zap"
-
-	"time"
 )
 
 type Bidder struct {

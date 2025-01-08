@@ -2,10 +2,11 @@ package bider
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/ireuven89/hello-world/backend/bider/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
 )
 
 type MockRepo struct {

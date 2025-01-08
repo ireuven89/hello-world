@@ -2,12 +2,13 @@ package aws
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/ireuven89/hello-world/backend/aws"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"os"
-	"testing"
 )
 
 const testBucket = "namespaces-test"

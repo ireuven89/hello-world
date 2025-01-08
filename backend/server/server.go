@@ -3,6 +3,7 @@ package server
 import (
 	"database/sql"
 	"fmt"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/ireuven89/hello-world/backend/aws"
 	"github.com/ireuven89/hello-world/backend/db"

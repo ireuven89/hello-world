@@ -1,10 +1,11 @@
 package sns
 
 import (
-	"github.com/aws/aws-sdk-go-v2/service/sns"
-
 	"context"
+
 	"go.uber.org/zap"
+
+	"github.com/aws/aws-sdk-go-v2/service/sns"
 )
 
 type SnsClient struct {

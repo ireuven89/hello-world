@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/labstack/echo/v4"
 	"strconv"
+
+	"github.com/labstack/echo/v4"
 )
 
 type DefaultRequest struct {
