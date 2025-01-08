@@ -41,15 +41,9 @@ type Doc struct {
 }
 
 type DocResponse struct {
-	Index  string `json:"_index"`
-	Id     string `json:"_id"`
-	Source source `json:"_source"`
-}
-
-type source struct {
-	Name      string `json:"name"`
-	Age       string `json:"age"`
-	CreatedAt string `json:"created_at"`
+	Index  string                 `json:"_index"`
+	Id     string                 `json:"_id"`
+	Source map[string]interface{} `json:"_source"`
 }
 
 func New() (*Service, error) {
@@ -73,6 +67,11 @@ func New() (*Service, error) {
 			},
 		},
 	})
+
+	//logger
+	loggerConfig := zap.NewDevelopmentConfig()
+	loggerConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	logger, err := loggerConfig.Build()
 
 	if err != nil {
 		log.Error("failed to connect to es cluster:", err)
@@ -122,11 +121,11 @@ func New() (*Service, error) {
 	return &Service{
 		client: es,
 		api:    api,
-		logger: zap.New(zapcore.NewCore(zapcore.NewJSONEncoder(zapcore.EncoderConfig{}), nil, nil)),
+		logger: logger,
 	}, nil
 }
 
-func (s *Service) Insert(ctx context.Context, index string, doc map[string]interface{}) error {
+func (s *Service) Insert(ctx context.Context, index string, doc interface{}) error {
 	var body bytes.Buffer
 	if err := json.NewEncoder(&body).Encode(doc); err != nil {
 		s.logger.Error(fmt.Sprintf("failed insert operation %v", ctx.Value("operation")))
@@ -139,7 +138,7 @@ func (s *Service) Insert(ctx context.Context, index string, doc map[string]inter
 		return err
 	}
 
-	s.logger.Debug("Insert operation: ", zap.Any("response is ", res))
+	s.logger.Debug(fmt.Sprintf("Insert operation: %v", res.Body))
 
 	return nil
 }

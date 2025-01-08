@@ -1,23 +1,27 @@
-package integration_tests
+package elastic
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"testing"
 
+	"github.com/ireuven89/hello-world/backend/elastic"
 	"github.com/ireuven89/hello-world/backend/tests/config"
 	"github.com/ireuven89/hello-world/backend/tests/utils"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/net/context"
 )
 
 var configJson config.ConfigurationJson
 var httpClient http.Client
 
 const (
-	indexName      = "test-index"
+	indexName      = "articles"
 	docName        = "test-doc"
 	getEndpoint    = "/_cat/indices"
 	InsertEndpoint = "%s/test-index/_doc"
@@ -40,27 +44,60 @@ type Hit struct {
 	Id    string `json:"_id"`
 }
 
+var esService *elastic.Service
+var ctx = context.Background()
+
 func init() {
-	configJson = config.GetConfigJson()
-	httpClient = utils.NewHttpClient()
+
+	if err := os.Setenv("ELASTIC_HOST", "http://localhost:9200"); err != nil {
+		panic("failed setting env for tests")
+	}
+
+	if err := os.Setenv("ELASTIC_USER", "elastic"); err != nil {
+		panic("failed setting env for tests")
+	}
+
+	if err := os.Setenv("ELASTIC_PASSWORD", "vwS2rX-79_ReyjLB"); err != nil {
+		panic("failed setting env for tests")
+	}
+
+	es, err := elastic.New()
+
+	if err != nil {
+		panic("failed initialize service")
+	}
+
+	esService = es
+}
+
+func TestInsert(t *testing.T) {
+	file, err := os.Open("./files/doc.json")
+
+	if err != nil {
+		assert.Fail(t, "failed to open file for test name")
+	}
+
+	body, err := ioutil.ReadAll(file)
+	if err != nil {
+		assert.Fail(t, "failed to parse file")
+	}
+
+	// Parse JSON into a map
+	var jsonDoc map[string]interface{}
+	if err = json.Unmarshal(body, &jsonDoc); err != nil {
+		assert.Fail(t, "failed to parse file")
+	}
+
+	err = esService.Insert(ctx, indexName, jsonDoc)
+
+	assert.Nil(t, err, "failed inserting")
 }
 
 func TestElasticSearchByIndex(t *testing.T) {
-	var searchResponse ElasticSearchResponse
-	url := fmt.Sprintf(SearchEndpoint, configJson.ElasticUrlLocal)
+	res, err := esService.Search(ctx, indexName)
 
-	response, err := httpClient.Get(url)
-
-	assert.Nil(t, err)
-	assert.NotEmpty(t, response.Body)
-
-	resp, err := io.ReadAll(response.Body)
-
-	assert.NotEmpty(t, resp)
-
-	err = json.Unmarshal(resp, &searchResponse)
-	assert.Nil(t, err)
-	assert.True(t, len(searchResponse.Hits.Hits) > 0)
+	assert.Nil(t, err, "failed search")
+	assert.NotEmpty(t, res, "failed search")
 
 }
 

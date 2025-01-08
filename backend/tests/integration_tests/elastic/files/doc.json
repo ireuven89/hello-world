@@ -1,0 +1,22 @@
+{
+  "id": "1",
+  "title": "Introduction to Elasticsearch",
+  "author": "John Doe",
+  "content": "Elasticsearch is a distributed, open-source search and analytics engine for all types of data.",
+  "tags": ["elasticsearch", "search", "analytics"],
+  "publish_date": "2025-01-08T12:00:00Z",
+  "views": 12345,
+  "rating": 4.7,
+  "comments": [
+    {
+      "user": "jane_doe",
+      "message": "Great article, very informative!",
+      "timestamp": "2025-01-07T14:30:00Z"
+    },
+    {
+      "user": "tech_guru",
+      "message": "Could you provide more details on scalability?",
+      "timestamp": "2025-01-07T15:45:00Z"
+    }
+  ]
+}
