@@ -10,6 +10,7 @@ func TestServer(t *testing.T) {
 
 	startTime := time.Now()
 	// Creating a channel
+
 	channel := make(chan int)
 
 	// Creating 10.000 workers to execute the task
