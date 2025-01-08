@@ -1,0 +1,17 @@
+{
+  "id": 1,
+  "name": "John Doe",
+  "email": "johndoe@example.com",
+  "isActive": true,
+  "roles": ["admin", "editor"],
+  "profile": {
+    "age": 30,
+    "gender": "male",
+    "preferences": {
+      "theme": "dark",
+      "notifications": true
+    }
+  },
+  "createdAt": "2025-01-08T12:00:00Z",
+  "tags": ["sample", "json", "generic"]
+}

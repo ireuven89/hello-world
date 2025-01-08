@@ -8,29 +8,29 @@ import (
 	"testing"
 )
 
-type MockDb struct {
+type MockRepo struct {
 	mock mock.Mock
 }
 
-func (mdb *MockDb) List(input model.BiddersInput) ([]Bidder, error) {
+func (mdb *MockRepo) List(input model.BiddersInput) ([]Bidder, error) {
 	args := mdb.mock.Called(input)
 
 	return args.Get(0).([]Bidder), args.Error(1)
 }
 
-func (mdb *MockDb) Single(input model.BiddersInput) (Bidder, error) {
+func (mdb *MockRepo) Single(input model.BiddersInput) (Bidder, error) {
 	args := mdb.mock.Called(input)
 
 	return args.Get(0).(Bidder), args.Error(1)
 }
 
-func (mdb *MockDb) Upsert(input model.BiddersInput) (string, error) {
+func (mdb *MockRepo) Upsert(input model.BiddersInput) (string, error) {
 	args := mdb.mock.Called(input)
 
 	return args.Get(0).(string), args.Error(1)
 }
 
-func (mdb *MockDb) Delete(uuid string) error {
+func (mdb *MockRepo) Delete(uuid string) error {
 	args := mdb.mock.Called(uuid)
 
 	return args.Error(0)
@@ -45,7 +45,7 @@ type TestList struct {
 }
 
 func TestRepository_List(t *testing.T) {
-	repo := MockDb{mock: mock.Mock{}}
+	repo := MockRepo{mock: mock.Mock{}}
 	successInput := model.BiddersInput{
 		Name: "name",
 		Uuid: "uuid",
@@ -88,7 +88,7 @@ type TestSingle struct {
 }
 
 func TestRepository_Single(t *testing.T) {
-	repo := MockDb{mock: mock.Mock{}}
+	repo := MockRepo{mock: mock.Mock{}}
 	successInput := model.BiddersInput{
 		Name: "name",
 		Uuid: "uuid",
@@ -118,7 +118,7 @@ type TestDelete struct {
 }
 
 func TestRepository_Delete(t *testing.T) {
-	repo := MockDb{mock: mock.Mock{}}
+	repo := MockRepo{mock: mock.Mock{}}
 	successInput := "uuid"
 	tests := []TestDelete{
 		{
@@ -151,7 +151,7 @@ type TestUpsert struct {
 }
 
 func TestRepository_Upsert(t *testing.T) {
-	repo := MockDb{mock: mock.Mock{}}
+	repo := MockRepo{mock: mock.Mock{}}
 	successInput := model.BiddersInput{Name: "test_name", Uuid: "uuid", Item: "item"}
 	tests := []TestUpsert{
 		{

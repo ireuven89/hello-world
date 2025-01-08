@@ -1,17 +1,20 @@
 package elastic
 
 import (
+	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v8/esapi"
+	"github.com/ireuven89/hello-world/backend/environment"
+
+	"github.com/labstack/gommon/log"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+
 	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
-	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/elastic/go-elasticsearch/v8/esapi"
-	"github.com/ireuven89/hello-world/backend/environment"
-	"github.com/labstack/gommon/log"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -126,20 +129,22 @@ func New() (*Service, error) {
 func (s *Service) Insert(ctx context.Context, index string, doc map[string]interface{}) error {
 	var body bytes.Buffer
 	if err := json.NewEncoder(&body).Encode(doc); err != nil {
-		log.Fatalf("Error encoding document: %s", err)
+		s.logger.Error(fmt.Sprintf("failed insert operation %v", ctx.Value("operation")))
+		return err
 	}
 	res, err := s.client.Index(index, &body)
 
 	if err != nil {
+		s.logger.Error(fmt.Sprintf("failed to insert to %v", ctx.Value("operation")))
 		return err
 	}
 
-	s.logger.Debug("Set operation: ", zap.Any("response is ", res))
+	s.logger.Debug("Insert operation: ", zap.Any("response is ", res))
 
 	return nil
 }
 
-func (s *Service) InsertBulk(index string, docs map[string][]interface{}) error {
+func (s *Service) InsertBulk(ctx context.Context, index string, docs map[string][]interface{}) error {
 	var body bytes.Buffer
 	if err := json.NewEncoder(&body).Encode(docs); err != nil {
 		log.Error(err)
@@ -152,6 +157,7 @@ func (s *Service) InsertBulk(index string, docs map[string][]interface{}) error 
 	response, err := req.Do(context.Background(), s.client.Transport)
 
 	if err != nil {
+		s.logger.Error(fmt.Sprintf("failed to insert to %v", ctx.Value("operation")))
 		return err
 	}
 
@@ -160,14 +166,16 @@ func (s *Service) InsertBulk(index string, docs map[string][]interface{}) error 
 	return nil
 }
 
-func (s *Service) Get(index string, docId string) (DocResponse, error) {
+func (s *Service) Get(ctx context.Context, index string, docId string) (DocResponse, error) {
 	res, err := s.client.Get(index, docId)
 
 	if err != nil {
+		s.logger.Error(fmt.Sprintf("failed to insert to %v", ctx.Value("operation")))
 		return DocResponse{}, err
 	}
 
 	if res.StatusCode != 200 {
+		s.logger.Error(fmt.Sprintf("failed to insert to %v", ctx.Value("operation")))
 		return DocResponse{}, errors.New("doc not found")
 	}
 
@@ -178,14 +186,16 @@ func (s *Service) Get(index string, docId string) (DocResponse, error) {
 	return result.(DocResponse), nil
 }
 
-func (s *Service) Search(index string, filters ...string) ([]DocResponse, error) {
+func (s *Service) Search(ctx context.Context, index string, filters ...string) ([]DocResponse, error) {
 	response, err := s.client.Search(s.client.Search.WithIndex(index))
 
 	if err != nil {
+		s.logger.Error(fmt.Sprintf("failed to insert to %v", ctx.Value("operation")))
 		return nil, err
 	}
 
 	if response.StatusCode != 200 {
+		s.logger.Error(fmt.Sprintf("failed to insert to %v", ctx.Value("operation")))
 		return nil, errors.New("failed to search")
 	}
 

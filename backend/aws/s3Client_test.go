@@ -61,6 +61,15 @@ func TestClient_DeleteObject(t *testing.T) {
 			}{key: "", bucket: "mock-bucket"},
 			mockCall: client.mock.On("DeleteObject", "", "mock-bucket").Return(errors.New("invalid key for s3")),
 		},
+		{
+			name:    "fail invalid bucket",
+			wantErr: true,
+			input: struct {
+				key    string
+				bucket string
+			}{key: "", bucket: "mock-bucket"},
+			mockCall: client.mock.On("DeleteObject", "mock-key", "").Return(errors.New("invalid bucket name")),
+		},
 	}
 
 	for _, test := range tests {

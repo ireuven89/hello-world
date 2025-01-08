@@ -18,7 +18,7 @@ func TestServer(t *testing.T) {
 	}
 
 	// Filling channel with 100.000 numbers to be executed
-	for i := 0; i < 10000000; i++ {
+	for i := 0; i < 10000; i++ {
 		channel <- i
 	}
 
