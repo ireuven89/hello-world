@@ -23,6 +23,7 @@ type Repo interface {
 	List(input model.BiddersInput) ([]model.Bidder, error)
 	Single(uuid string) (model.Bidder, error)
 	Upsert(input model.BiddersInput) (string, error)
+	Delete(id string) error
 }
 
 type Repository struct {
@@ -127,4 +128,16 @@ func setValuesMap(input model.BiddersInput) map[string]interface{} {
 	}
 
 	return valuesMap
+}
+
+func (r *Repository) Delete(uuid string) error {
+
+	q := r.db.DeleteFrom(dbmodel.Bidders).
+		Where(sqlz.Eq("uuid", uuid))
+
+	if _, err := q.Exec(); err != nil {
+		r.logger.Error("failed to delete bidder", zap.String("uuid", uuid))
+	}
+
+	return nil
 }
