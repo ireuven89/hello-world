@@ -20,9 +20,8 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.20'
-
     - name: Build
-      run: go build -v ./...
+      run: cd hello-world/backend || go build -v ./...
 
     - name: Test
       run: go test -v ./...
