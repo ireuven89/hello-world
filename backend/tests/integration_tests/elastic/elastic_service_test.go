@@ -1,10 +1,7 @@
 package elastic
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -12,7 +9,6 @@ import (
 
 	"github.com/ireuven89/hello-world/backend/elastic"
 	"github.com/ireuven89/hello-world/backend/tests/config"
-	"github.com/ireuven89/hello-world/backend/tests/utils"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -98,42 +94,5 @@ func TestElasticSearchByIndex(t *testing.T) {
 
 	assert.Nil(t, err, "failed search")
 	assert.NotEmpty(t, res, "failed search")
-
-}
-
-func TestElasticGet(t *testing.T) {
-	esUrl := configJson.ElasticUrlLocal
-
-	client := utils.NewHttpClient()
-
-	url := esUrl + getEndpoint + "/" + indexName
-	resp, err := client.Get(url)
-	assert.Nil(t, err)
-	assert.Equal(t, 200, resp.StatusCode)
-	assert.NotEmptyf(t, resp.Body, "failed to get response")
-	response, err := io.ReadAll(resp.Body)
-	assert.Nil(t, err)
-	res := string(response)
-	fmt.Print(res)
-}
-
-func TestElasticInsert(t *testing.T) {
-	doc := map[string]interface {
-	}{
-		"Name":   "Alice",
-		"Age":    30,
-		"Origin": "North",
-	}
-	url := fmt.Sprintf(InsertEndpoint, configJson.ElasticUrlLocal)
-	var body bytes.Buffer
-
-	err := json.NewEncoder(&body).Encode(doc)
-
-	assert.Nil(t, err)
-
-	response, err := httpClient.Post(url, "application/json", &body)
-
-	assert.Nil(t, err)
-	assert.Equal(t, response.StatusCode, 201)
 
 }

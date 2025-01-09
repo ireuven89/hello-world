@@ -1,6 +1,8 @@
 package elastic
 
 import (
+	"reflect"
+
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/ireuven89/hello-world/backend/environment"
@@ -38,6 +40,15 @@ type Service struct {
 type Doc struct {
 	doc   bytes.Buffer
 	index string
+}
+
+type SearchResponse struct {
+	Took     int16   `json:"took"`
+	TimedOut bool    `json:"timed_out"`
+	MaxScore float32 `json:"max_score"`
+	Hits     struct {
+		Hits []DocResponse `json:"hits"`
+	} `json:"hits"`
 }
 
 type DocResponse struct {
@@ -166,6 +177,8 @@ func (s *Service) InsertBulk(ctx context.Context, index string, docs map[string]
 }
 
 func (s *Service) Get(ctx context.Context, index string, docId string) (DocResponse, error) {
+	var result DocResponse
+
 	res, err := s.client.Get(index, docId)
 
 	if err != nil {
@@ -178,44 +191,50 @@ func (s *Service) Get(ctx context.Context, index string, docId string) (DocRespo
 		return DocResponse{}, errors.New("doc not found")
 	}
 
-	result, err := s.parseDoc(res.Body, DocResponse{})
+	err = s.parse(res.Body, &result)
 
 	println(res.Body)
 
-	return result.(DocResponse), nil
+	return result, nil
 }
 
-func (s *Service) Search(ctx context.Context, index string, filters ...string) ([]DocResponse, error) {
+func (s *Service) Search(ctx context.Context, index string, filters ...string) (SearchResponse, error) {
+	var result SearchResponse
 	response, err := s.client.Search(s.client.Search.WithIndex(index))
 
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("failed to insert to %v", ctx.Value("operation")))
-		return nil, err
+		return SearchResponse{}, err
 	}
 
 	if response.StatusCode != 200 {
 		s.logger.Error(fmt.Sprintf("failed to insert to %v", ctx.Value("operation")))
-		return nil, errors.New("failed to search")
+		return SearchResponse{}, errors.New("failed to search")
 	}
 
-	result, err := s.parseDoc(response.Body, []DocResponse{})
+	err = s.parse(response.Body, &result)
 
 	if err != nil {
-		return nil, err
+		return SearchResponse{}, err
 	}
 
-	return result.([]DocResponse), nil
+	return result, nil
 }
 
-func (s *Service) parseDoc(reader io.ReadCloser, t any) (any, error) {
+func (s *Service) parse(reader io.ReadCloser, obj interface{}) error {
 
 	body, err := io.ReadAll(reader)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	err = json.Unmarshal(body, &t)
+	val := reflect.ValueOf(obj)
+	if val.Kind() != reflect.Ptr || val.IsNil() {
+		return fmt.Errorf("obj must be a non-nil pointer")
+	}
 
-	return t, nil
+	// Unmarshal JSON into the provided object
+	return json.Unmarshal(body, obj)
+
 }

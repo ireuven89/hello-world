@@ -21,7 +21,8 @@ type Service struct {
 }
 
 var ctx = context.Background()
-var ttl = time.Second * 3
+
+const ttl = time.Second * 3
 
 func New(logger *zap.Logger) (*Service, error) {
 	host := environment.Variables.RedisHost
