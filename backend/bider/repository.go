@@ -8,6 +8,7 @@ import (
 	"github.com/ireuven89/hello-world/backend/bider/model"
 	dbmodel "github.com/ireuven89/hello-world/backend/db/model"
 	"github.com/ireuven89/hello-world/backend/db/utils"
+	"github.com/ireuven89/hello-world/backend/redis"
 	"go.uber.org/zap"
 )
 
@@ -28,7 +29,17 @@ type Repo interface {
 
 type Repository struct {
 	db     *sqlz.DB
+	redis  *redis.Service
 	logger *zap.Logger
+}
+
+func New(db *sqlz.DB, logger *zap.Logger, redis *redis.Service) *Repository {
+
+	return &Repository{
+		db:     db,
+		logger: logger,
+		redis:  redis,
+	}
 }
 
 func (r *Repository) List(input model.BiddersInput) ([]model.Bidder, error) {

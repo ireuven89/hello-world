@@ -8,5 +8,3 @@ RUN go mod download && go mod verify
 RUN go build .
 
 ENTRYPOINT ["./backend"]
-
-

@@ -13,7 +13,7 @@ import (
 
 const testBucket = "namespaces-test"
 
-var awsClient *aws.Client
+var awsClient aws.Service
 
 func init() {
 	if err := os.Setenv("AWS_REGION", "us-east-1"); err != nil {

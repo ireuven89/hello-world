@@ -22,3 +22,9 @@ type ItemInput struct {
 	Category string `json:"category" db:"category"`
 	Name     string `json:"name" db:"name"`
 }
+
+type ListInput struct {
+	Link        string
+	Name        string
+	Description string
+}

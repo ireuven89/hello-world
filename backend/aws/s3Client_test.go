@@ -2,6 +2,10 @@ package aws
 
 import (
 	"errors"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	"go.uber.org/zap/zaptest"
 	"os"
 	"testing"
 
@@ -163,4 +167,52 @@ func TestClient_PutObject(t *testing.T) {
 		err := client.PutObject(test.input.key, test.input.bucket, &os.File{})
 		assert.Equal(t, err != nil, test.wantErr)
 	}
+}
+
+// MockS3Client implements s3iface.S3API for mocking
+type MockS3Client struct {
+	s3iface.S3API
+	PutObjectFunc func(input *s3.PutObjectInput) (*s3.PutObjectOutput, error)
+}
+
+// PutObject mocks the PutObject method
+func (m *MockS3Client) PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
+	return m.PutObjectFunc(input)
+}
+
+// TestPutObject tests the PutObject method
+func TestPutObject(t *testing.T) {
+	logger := zaptest.NewLogger(t) // Create a logger for testing
+
+	// Create a mock S3 client
+	mockClient := &MockS3Client{
+		PutObjectFunc: func(input *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
+			// Verify input parameters for the mock
+			assert.Equal(t, aws.String("test-bucket"), input.Bucket)
+			assert.Equal(t, aws.String("test-key"), input.Key)
+			assert.NotNil(t, input.Body)
+			return &s3.PutObjectOutput{}, nil
+		},
+	}
+
+	// Create the ServiceAws instance with the mocked client
+	service := &ServiceAws{
+		client: mockClient,
+		logger: logger,
+	}
+
+	// Create a temporary file to simulate the input file
+	file, err := os.CreateTemp("", "testfile")
+	if err != nil {
+		t.Fatalf("failed to create temp file: %v", err)
+	}
+	defer os.Remove(file.Name()) // Clean up the file after the test
+	_, _ = file.Write([]byte("test data"))
+	_, _ = file.Seek(0, 0) // Reset the file pointer
+
+	// Call the PutObject method
+	err = service.PutObject("test-key", "test-bucket", file)
+
+	// Validate the result
+	assert.NoError(t, err)
 }

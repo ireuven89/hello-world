@@ -65,8 +65,8 @@ func TestMockGet(t *testing.T) {
 				index string
 				docId string
 			}{index: "mock-index", docId: "mock-id"},
-			mockCall: client.mock.On("Get", "mock-index", "mock-id").Return(DocResponse{Index: "mock-index", Id: "mock-id", Source: source{Name: "test-doc"}}, nil),
-			expected: DocResponse{Index: "mock-index", Id: "mock-id", Source: source{Name: "test-doc"}},
+			mockCall: client.mock.On("Get", "mock-index", "mock-id").Return(DocResponse{Index: "mock-index", Id: "mock-id", Source: map[string]interface{}{"name": "mock-name"}}, nil),
+			expected: DocResponse{Index: "mock-index", Id: "mock-id", Source: map[string]interface{}{"name": "mock-name"}},
 		},
 	}
 
@@ -156,8 +156,8 @@ func TestSearch(t *testing.T) {
 				index   string
 				filters []string
 			}{index: "mock-index", filters: []string{""}},
-			expected: map[string]interface{}{"result": DocResponse{Index: "mock-index", Id: "mock-id", Source: source{Name: "mock-name"}}},
-			mockCall: client.mock.On("Search", "mock-index", []string{""}).Return(map[string]interface{}{"result": DocResponse{Index: "mock-index", Id: "mock-id", Source: source{Name: "mock-name"}}}, nil),
+			expected: map[string]interface{}{"result": DocResponse{Index: "mock-index", Id: "mock-id", Source: map[string]interface{}{"name": "test-doc"}}},
+			mockCall: client.mock.On("Search", "mock-index", []string{""}).Return(map[string]interface{}{"result": DocResponse{Index: "mock-index", Id: "mock-id", Source: map[string]interface{}{"name": "test-doc"}}}, nil),
 		},
 	}
 

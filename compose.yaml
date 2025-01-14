@@ -153,5 +153,19 @@ services:
        timeout: 1m
        retries: 3
        start_period: 5s
-
+  kafka:
+    image: confluentinc/cp-kafka:7.8.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    volumes:
+      - /var/lib/kafka
+    healthcheck:
+      test: /kafka/bin/kafka-cluster.sh cluster-id --bootstrap-server kafka:9092 || exit 1
+      interval: 1s
+      timeout: 10s
+      retries: 3
+  zookeeper:
+    image: zookeeper:latest
+    container_name: zookeeper
 

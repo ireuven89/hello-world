@@ -26,8 +26,16 @@ type UserUpsertInput struct {
 	Uuid   string `json:"uuid"`
 	Name   string `json:"name"`
 	Region string `json:"region"`
+	Email  string `json:"email"`
 }
 
 type DeleteUserInput struct {
 	Uuid string `json:"uuid"`
+}
+
+type UserResponse struct {
+	Name        string `json:"name"`
+	Uuid        string `json:"uuid"`
+	Region      string `json:"region"`
+	Description string `json:"description"`
 }

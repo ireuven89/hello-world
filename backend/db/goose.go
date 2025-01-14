@@ -16,22 +16,22 @@ const (
 	lockMode = "WRITE"
 )
 
-type MigrationService interface {
+type Service interface {
 	lockDB() (*sql.Tx, error)
 	unlockDB(transaction *sql.Tx) error
-	migrateDB(transaction *sql.Tx) error
-	validateDB() error
+	migrateDB() error
+	Run() error
 }
 
-type Service struct {
+type MigrationService struct {
 	db            *sql.DB
 	logger        *zap.Logger
 	migrationsDir string
 }
 
-func New(db *sql.DB, logger *zap.Logger, migrationsDir string) *Service { // setup database
+func New(db *sql.DB, logger *zap.Logger, migrationsDir string) Service {
 
-	return &Service{
+	return &MigrationService{
 		db:            db,
 		logger:        logger,
 		migrationsDir: migrationsDir,
@@ -39,7 +39,7 @@ func New(db *sql.DB, logger *zap.Logger, migrationsDir string) *Service { // set
 }
 
 // Run - this function migrates DB
-func (ms *Service) Run() error {
+func (ms *MigrationService) Run() error {
 	tx, err := ms.lockDB()
 
 	if err != nil {
@@ -61,7 +61,7 @@ func (ms *Service) Run() error {
 }
 
 // lockDB - this function locks the DB
-func (ms *Service) lockDB() (*sql.Tx, error) {
+func (ms *MigrationService) lockDB() (*sql.Tx, error) {
 
 	tx, err := ms.db.Begin()
 
@@ -81,8 +81,8 @@ func (ms *Service) lockDB() (*sql.Tx, error) {
 	return tx, nil
 }
 
-// unlockDB - this function unlocks DB give na transaction
-func (ms *Service) unlockDB(transaction *sql.Tx) error {
+// unlockDB - this function unlocks DB given a transaction
+func (ms *MigrationService) unlockDB(transaction *sql.Tx) error {
 
 	if transaction == nil {
 		ms.logger.Error("failed unlocking DB: transaction not exists")
@@ -105,7 +105,7 @@ func (ms *Service) unlockDB(transaction *sql.Tx) error {
 }
 
 // migrateDB - this function migrates the DB
-func (ms *Service) migrateDB() error {
+func (ms *MigrationService) migrateDB() error {
 	if err := goose.SetDialect("mysql"); err != nil {
 		return err
 	}

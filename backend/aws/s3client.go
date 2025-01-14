@@ -2,6 +2,7 @@ package aws
 
 import (
 	"errors"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -11,18 +12,18 @@ import (
 	"go.uber.org/zap"
 )
 
-type AWSClient interface {
-	PutObject(key, bucket string, file os.File) error
-	GetObject(key, bucket string) error
+type Service interface {
+	PutObject(key, bucket string, file *os.File) error
+	GetObject(key, bucket string) (interface{}, error)
 	DeleteObject(key, bucket string) error
 }
 
-type Client struct {
-	client *s3.S3
+type ServiceAws struct {
+	client s3iface.S3API
 	logger *zap.Logger
 }
 
-func New(logger *zap.Logger) (*Client, error) {
+func New(logger *zap.Logger) (Service, error) {
 	config := aws.Config{Region: &environment.Variables.AwsRegion}
 	var err error
 
@@ -34,13 +35,13 @@ func New(logger *zap.Logger) (*Client, error) {
 	sess := session.Must(session.NewSession(&config))
 	client := s3.New(sess)
 
-	return &Client{
+	return &ServiceAws{
 		client: client,
 		logger: logger,
 	}, err
 }
 
-func (c *Client) PutObject(key, bucket string, file *os.File) error {
+func (c *ServiceAws) PutObject(key, bucket string, file *os.File) error {
 	input := s3.PutObjectInput{Bucket: aws.String(bucket), Key: aws.String(key), Body: file}
 	out, err := c.client.PutObject(&input)
 
@@ -53,7 +54,7 @@ func (c *Client) PutObject(key, bucket string, file *os.File) error {
 	return nil
 }
 
-func (c *Client) GetObject(key, bucket string) (interface{}, error) {
+func (c *ServiceAws) GetObject(key, bucket string) (interface{}, error) {
 	input := s3.GetObjectInput{Bucket: &bucket, Key: &key}
 	out, err := c.client.GetObject(&input)
 
@@ -66,7 +67,7 @@ func (c *Client) GetObject(key, bucket string) (interface{}, error) {
 	return out.Body, nil
 }
 
-func (c *Client) DeleteObject(key, bucket string) error {
+func (c *ServiceAws) DeleteObject(key, bucket string) error {
 	input := s3.DeleteObjectInput{
 		Bucket: &bucket,
 		Key:    &key,

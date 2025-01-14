@@ -31,6 +31,10 @@ func AssignRoutes(e *echo.Echo) {
 
 	group := e.Group("api/v1")
 
+	//	e.Use(middlewareFunc)
+
+	//handlers
+
 	//user
 	group.Add(http.MethodGet, "/users", GetUsersHandler)
 	group.Add(http.MethodGet, "/users/:userUuid", GetUsersHandler)
@@ -59,15 +63,19 @@ func AssignRoutes(e *echo.Echo) {
 }
 
 func GetUsersHandler(c echo.Context) error {
-	/*	uuid := c.Param("uuid")
-		page := getPagination(c)
-		res, err := user.New().Single(model.UserFetchInput{Uuid: uuid})
+	//var input model.UserFetchInput
+	/*if err := c.Bind(&input); err != nil {
+		return c.JSON(http.StatusBadRequest, "input is invalid")
+	}
+	repos := c.Get("repositories").(*server.Repositories)
 
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, "failed to decode request")
-		}*/
+	result, err := repos.UserRepo.List(input)
 
-	return c.JSON(http.StatusAccepted, "")
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, "failed to list users")
+	}
+	*/
+	return c.JSON(http.StatusOK, "")
 }
 
 func UpsertUserHandler(c echo.Context) error {
@@ -117,9 +125,9 @@ func PutUserHandler(c echo.Context) error {
 func DeleteUserHandler(c echo.Context) error {
 	//uuid := c.Param("uuid")
 
-	/*	if err := user.New().Delete(model.DeleteUserInput{Uuid: uuid}); err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("failed to delete user %v", err))
-	}*/
+	/*		if err := user.New().Delete(model.DeleteUserInput{Uuid: uuid}); err != nil {
+			return c.JSON(http.StatusInternalServerError, fmt.Sprintf("failed to delete user %v", err))
+		}*/
 
 	return c.JSON(http.StatusNoContent, "deleted")
 

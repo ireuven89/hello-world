@@ -5,10 +5,11 @@ import (
 	"path/filepath"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/ido50/sqlz"
 	"github.com/ireuven89/hello-world/backend/environment"
 )
 
-func MustNewDB() (*sql.DB, string, error) {
+func MustNewDB() (*sqlz.DB, string, error) {
 	cfg := mysql.Config{
 		User:   environment.Variables.ItemsDbUser,
 		Passwd: environment.Variables.ItemsDbPassword,
@@ -39,5 +40,5 @@ func MustNewDB() (*sql.DB, string, error) {
 		return nil, "", err
 	}
 
-	return itemsDB, migrationPath, nil
+	return sqlz.New(itemsDB, "sql"), migrationPath, nil
 }

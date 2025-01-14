@@ -22,8 +22,6 @@ type Service struct {
 
 var ctx = context.Background()
 
-const ttl = time.Second * 3
-
 func New(logger *zap.Logger) (*Service, error) {
 	host := environment.Variables.RedisHost
 	client := redis.NewClient(&redis.Options{
@@ -43,7 +41,7 @@ func New(logger *zap.Logger) (*Service, error) {
 	}, nil
 }
 
-func (s *Service) Set(key string, value interface{}) error {
+func (s *Service) Set(key string, value interface{}, ttl time.Duration) error {
 
 	if err := s.client.Set(ctx, key, value, ttl).Err(); err != nil {
 		s.logger.Error(fmt.Sprintf("failed inserting to redis %v", err))

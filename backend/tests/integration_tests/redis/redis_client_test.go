@@ -34,7 +34,7 @@ func init() {
 }
 
 func TestSet(t *testing.T) {
-	err := redisClient.Set(key, value)
+	err := redisClient.Set(key, value, ttl)
 
 	assert.Nil(t, err)
 }

@@ -21,7 +21,7 @@ pipeline {
         }
       stage('Deploy') {
             steps {
-               docker build .
+               docker build . -t server
                docker push '/'
             }
         }

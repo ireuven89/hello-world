@@ -1,15 +1,16 @@
-package user
+package users
 
 import (
 	"database/sql"
 	"path/filepath"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/ido50/sqlz"
 	"github.com/ireuven89/hello-world/backend/environment"
 )
 
 // MustNewDB - returns the db connection, the migrations directory of the db, and an error if anything failed
-func MustNewDB() (*sql.DB, string, error) {
+func MustNewDB() (*sqlz.DB, string, error) {
 	cfg := mysql.Config{
 		User:   environment.Variables.UsersDbUser,
 		Passwd: environment.Variables.UsersDbPassword,
@@ -40,5 +41,5 @@ func MustNewDB() (*sql.DB, string, error) {
 		return nil, "", err
 	}
 
-	return usersDB, migrationDir, nil
+	return sqlz.New(usersDB, "mysql"), migrationDir, nil
 }
