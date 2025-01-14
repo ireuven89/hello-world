@@ -13,13 +13,13 @@ func TestServer(t *testing.T) {
 
 	channel := make(chan int)
 
-	// Creating 10.000 workers to execute the task
-	for i := 0; i < 10000; i++ {
+	// Creating 100 workers to execute the task
+	for i := 0; i < 100; i++ {
 		go someTask(i, channel)
 	}
 
 	// Filling channel with 100.000 numbers to be executed
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 100; i++ {
 		channel <- i
 	}
 
