@@ -7,28 +7,27 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/ireuven89/hello-world/backend/environment"
 
-	"github.com/labstack/gommon/log"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-
 	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/labstack/gommon/log"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
-	"time"
 )
 
 //go:generate mockgen -source=client.go -destination=mock/client.go
 
 type Service interface {
-	Insert(ctx context.Context, index string, doc interface{}) error
+	Insert(ctx context.Context, index string, doc interface{}) (string, error)
 	InsertBulk(ctx context.Context, index string, docs map[string][]interface{}) error
 	Search(ctx context.Context, index string, filters ...string) (SearchResponse, error)
 	Get(ctx context.Context, index string, docId string) (DocResponse, error)
+	Delete(ctx context.Context, index string, docId string) error
+	DeleteIndex(ctx context.Context, index string) error
 }
 
 type EsService struct {
@@ -57,7 +56,7 @@ type DocResponse struct {
 	Source map[string]interface{} `json:"_source"`
 }
 
-func New() (Service, error) {
+func New(logger *zap.Logger) (Service, error) {
 
 	//env
 	if err := environment.Load(); err != nil {
@@ -89,55 +88,7 @@ func New() (Service, error) {
 		return nil, fmt.Errorf("failed with status code %v", res.StatusCode)
 	}
 
-	//logger
-	loggerConfig := zap.NewDevelopmentConfig()
-	loggerConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	logger, err := loggerConfig.Build()
-
-	if err != nil {
-		log.Error("failed to connect to es cluster:", err)
-		return nil, err
-	}
-
-	// Document to index
-	doc := map[string]interface{}{
-		"name":       "Alice",
-		"age":        "30",
-		"created_at": time.Now(),
-	}
-
-	// Convert document to JSON
-	var body bytes.Buffer
-	if err := json.NewEncoder(&body).Encode(doc); err != nil {
-		log.Fatalf("Error encoding document: %s", err)
-	}
-
-	if err != nil {
-		log.Errorf("failed to initiate client")
-	}
-
 	api := esapi.New(es.Transport)
-
-	exreq := esapi.ExistsRequest{Index: "my-index", DocumentID: "1"}
-	reuqest := esapi.IndexRequest{
-		Index: "my-index",
-		Body:  &body,
-	}
-
-	response, err := exreq.Do(context.Background(), es)
-
-	if err != nil {
-		log.Errorf("error checking index ", err)
-	}
-	log.Info(response)
-
-	result, err := reuqest.Do(context.Background(), es)
-
-	if err != nil {
-		return nil, err
-	}
-
-	log.Info(result)
 
 	return &EsService{
 		client: es,
@@ -146,22 +97,41 @@ func New() (Service, error) {
 	}, nil
 }
 
-func (s *EsService) Insert(ctx context.Context, index string, doc interface{}) error {
+func (s *EsService) Insert(ctx context.Context, index string, doc interface{}) (string, error) {
 	var body bytes.Buffer
 	if err := json.NewEncoder(&body).Encode(doc); err != nil {
 		s.logger.Error(fmt.Sprintf("failed insert operation %v", ctx.Value("operation")))
-		return err
+		return "", err
 	}
 	res, err := s.client.Index(index, &body)
 
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("failed to insert to %v", ctx.Value("operation")))
-		return err
+		return "", err
 	}
 
-	s.logger.Debug(fmt.Sprintf("Insert operation: %v", res.Body))
+	if res.IsError() {
+		s.logger.Error(fmt.Sprintf("failed to insert to %v %v", ctx.Value("operation"), res.String()))
+		return "", fmt.Errorf("failed initiating server with status code %v", res.StatusCode)
+	}
 
-	return nil
+	// Parse the response to retrieve the document ID
+	var resBody map[string]interface{}
+	if err = json.NewDecoder(res.Body).Decode(&resBody); err != nil {
+		s.logger.Error(fmt.Sprintf("Error parsing response body: %v", err))
+		return "", err
+	}
+
+	docID, ok := resBody["_id"].(string)
+
+	if !ok {
+		s.logger.Error(fmt.Sprintf("Error parsing response body: %v", err))
+		return "", errors.New(fmt.Sprintf("Error parsing doc id from response: %v", err))
+	}
+
+	s.logger.Debug(fmt.Sprintf("Insert operation: %v", res.String()))
+
+	return docID, nil
 }
 
 func (s *EsService) InsertBulk(ctx context.Context, index string, docs map[string][]interface{}) error {
@@ -229,6 +199,38 @@ func (s *EsService) Search(ctx context.Context, index string, filters ...string)
 	}
 
 	return result, nil
+}
+
+func (s *EsService) Delete(ctx context.Context, index string, docId string) error {
+	res, err := s.client.Delete(index, docId, s.client.Delete.WithContext(ctx))
+
+	if err != nil {
+		s.logger.Error(fmt.Sprintf("failed to delete doc:  %v %v", docId, err))
+		return err
+	}
+
+	if res.IsError() {
+		s.logger.Error(fmt.Sprintf("failed to delete doc:  %v %v", docId, err))
+		return fmt.Errorf("failed to delete doc status code %v message is %v", res.StatusCode, res.String())
+	}
+
+	return nil
+}
+
+func (s *EsService) DeleteIndex(ctx context.Context, index string) error {
+	res, err := s.client.Indices.Delete([]string{index}, s.client.Indices.Delete.WithContext(ctx))
+
+	if err != nil {
+		s.logger.Error(fmt.Sprintf("failed to delete doc:  %v %v", index, err))
+		return err
+	}
+
+	if res.IsError() {
+		s.logger.Error(fmt.Sprintf("failed to delete doc:  %v %v", index, err))
+		return fmt.Errorf("failed to delete doc status code %v message is %v", res.StatusCode, res.String())
+	}
+
+	return nil
 }
 
 func (s *EsService) parse(reader io.ReadCloser, obj interface{}) error {

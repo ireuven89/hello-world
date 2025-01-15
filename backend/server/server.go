@@ -77,7 +77,7 @@ func New() (*Server, error) {
 	userRepo := userrepo.New(usersDB, redisClient, logger)
 	usersService := users.New(logger, userRepo)
 
-	es, err := elastic.New()
+	es, err := elastic.New(logger)
 	if err != nil {
 		return nil, err
 	}
