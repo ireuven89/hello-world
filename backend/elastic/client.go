@@ -115,9 +115,23 @@ func (s *EsService) Insert(ctx context.Context, index string, doc interface{}) (
 		return "", fmt.Errorf("failed initiating server with status code %v", res.StatusCode)
 	}
 
+	// Parse the response to retrieve the document ID
+	var resBody map[string]interface{}
+	if err = json.NewDecoder(res.Body).Decode(&resBody); err != nil {
+		s.logger.Error(fmt.Sprintf("Error parsing response body: %v", err))
+		return "", err
+	}
+
+	docID, ok := resBody["_id"].(string)
+
+	if !ok {
+		s.logger.Error(fmt.Sprintf("Error parsing response body: %v", err))
+		return "", errors.New(fmt.Sprintf("Error parsing doc id from response: %v", err))
+	}
+
 	s.logger.Debug(fmt.Sprintf("Insert operation: %v", res.String()))
 
-	return "", nil
+	return docID, nil
 }
 
 func (s *EsService) InsertBulk(ctx context.Context, index string, docs map[string][]interface{}) error {

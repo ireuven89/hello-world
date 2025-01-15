@@ -18,11 +18,7 @@ var configJson config.ConfigurationJson
 var httpClient http.Client
 
 const (
-	indexName      = "articles"
-	docName        = "test-doc"
-	getEndpoint    = "/_cat/indices"
-	InsertEndpoint = "%s/test-index/_doc"
-	SearchEndpoint = "%s/test-index/_search"
+	indexName = "articles"
 )
 
 type ElasticSearchResponse struct {
@@ -43,6 +39,7 @@ type Hit struct {
 
 var esService elastic.Service
 var ctx = context.Background()
+var docId string
 
 func init() {
 
@@ -88,9 +85,10 @@ func TestInsert(t *testing.T) {
 		assert.Fail(t, "failed to parse file")
 	}
 
-	_, err = esService.Insert(ctx, indexName, jsonDoc)
+	Id, err := esService.Insert(ctx, indexName, jsonDoc)
 
 	assert.Nil(t, err, "failed inserting")
+	docId = Id
 }
 
 func TestElasticSearchByIndex(t *testing.T) {
@@ -102,15 +100,20 @@ func TestElasticSearchByIndex(t *testing.T) {
 }
 
 func TestDeleteDocByIndex(t *testing.T) {
-	err := esService.Delete(ctx, indexName, docName)
+	err := esService.Delete(ctx, indexName, docId)
 
 	assert.Nil(t, err, "failed delete")
+	t.Log("finished test delete doc")
 
 }
 
 func TestDeleteIndex(t *testing.T) {
 	err := esService.DeleteIndex(ctx, indexName)
 
-	assert.Nil(t, err, "failed delete")
+	assert.Nil(t, err, "failed delete test")
+}
 
+func TestMain(m *testing.M) {
+	exitCode := m.Run() // Runs all tests
+	os.Exit(exitCode)
 }
