@@ -2,6 +2,7 @@ package elastic
 
 import (
 	"encoding/json"
+	"go.uber.org/zap/zaptest"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -40,7 +41,7 @@ type Hit struct {
 	Id    string `json:"_id"`
 }
 
-var esService *elastic.Service
+var esService elastic.Service
 var ctx = context.Background()
 
 func init() {
@@ -57,7 +58,10 @@ func init() {
 		panic("failed setting env for tests")
 	}
 
-	es, err := elastic.New()
+	t := testing.T{}
+	logger := zaptest.NewLogger(&t)
+
+	es, err := elastic.New(logger)
 
 	if err != nil {
 		panic("failed initialize service")
@@ -84,7 +88,7 @@ func TestInsert(t *testing.T) {
 		assert.Fail(t, "failed to parse file")
 	}
 
-	err = esService.Insert(ctx, indexName, jsonDoc)
+	_, err = esService.Insert(ctx, indexName, jsonDoc)
 
 	assert.Nil(t, err, "failed inserting")
 }
@@ -94,5 +98,19 @@ func TestElasticSearchByIndex(t *testing.T) {
 
 	assert.Nil(t, err, "failed search")
 	assert.NotEmpty(t, res, "failed search")
+
+}
+
+func TestDeleteDocByIndex(t *testing.T) {
+	err := esService.Delete(ctx, indexName, docName)
+
+	assert.Nil(t, err, "failed delete")
+
+}
+
+func TestDeleteIndex(t *testing.T) {
+	err := esService.DeleteIndex(ctx, indexName)
+
+	assert.Nil(t, err, "failed delete")
 
 }

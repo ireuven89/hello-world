@@ -34,7 +34,7 @@ func GetConfiguration(dir string) (Config, error) {
 	return config, nil
 }
 
-// Levinstain - returns the distance between a and b
+// Levenshtein - returns the distance between a and b
 func Levinstein(a, b string) float32 {
 	aChars := strings.Split(a, "")
 	bChars := strings.Split(b, "")
