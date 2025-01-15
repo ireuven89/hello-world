@@ -24,7 +24,7 @@ type Server struct {
 	ItemService  item.Service
 	Logger       *zap.Logger
 	Echo         *echo.Echo
-	Elastic      *elastic.Service
+	Elastic      elastic.Service
 	AWSClient    aws.Service
 	RabbitClient *rabbit.Client
 	Redis        *redis.Service

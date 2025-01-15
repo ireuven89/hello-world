@@ -36,15 +36,15 @@ func GetConfiguration(dir string) (Config, error) {
 
 // Levinstain - returns the distance between a and b
 func Levinstein(a, b string) float32 {
-	aCahrs := strings.Split(a, "")
+	aChars := strings.Split(a, "")
 	bChars := strings.Split(b, "")
-	absDistance := math.Abs(float64(float32(len(bChars) - len(aCahrs))))
+	absDistance := math.Abs(float64(float32(len(bChars) - len(aChars))))
 
-	for index := range aCahrs {
+	for index := range aChars {
 		if index >= len(bChars) {
 			break
 		}
-		if aCahrs[index] != bChars[index] {
+		if aChars[index] != bChars[index] {
 			absDistance++
 		}
 	}

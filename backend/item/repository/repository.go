@@ -7,19 +7,23 @@ import (
 
 	"github.com/ido50/sqlz"
 	"github.com/ireuven89/hello-world/backend/item/model"
-	"github.com/ireuven89/hello-world/backend/redis"
 	"go.uber.org/zap"
 )
 
 type ItemRepository struct {
 	db     *sqlz.DB
-	redis  *redis.Service
+	redis  Redis
 	logger *zap.Logger
+}
+
+type Redis interface {
+	Get(key string) (interface{}, error)
+	Set(key string, value interface{}, ttl time.Duration) error
 }
 
 const redisTtl = time.Minute * 3
 
-func New(db *sqlz.DB, logger *zap.Logger, redis *redis.Service) *ItemRepository {
+func New(db *sqlz.DB, logger *zap.Logger, redis Redis) *ItemRepository {
 
 	return &ItemRepository{
 		db:     db,
@@ -146,19 +150,10 @@ func (r *ItemRepository) Upsert(item model.ItemInput) (string, error) {
 }
 
 func (r *ItemRepository) Delete(uuid string) error {
-
-	queryString := fmt.Sprintf("uuid=%s", uuid)
-
-	result, err := r.redis.Get(queryString)
-
-	if err != nil {
-		return nil
-	}
-
 	q := r.db.DeleteFrom("items").
 		Where(sqlz.Eq("uuid", uuid))
 
-	if err = q.GetRow(&result); err != nil {
+	if _, err := q.Exec(); err != nil {
 		r.logger.Error("failed deleting form db: ", zap.Any("error", err))
 		return err
 	}

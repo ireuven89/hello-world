@@ -1,9 +1,9 @@
 package elastic
 
 import (
+	"github.com/elastic/go-elasticsearch/v8"
 	"reflect"
 
-	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/ireuven89/hello-world/backend/environment"
 
@@ -24,14 +24,14 @@ import (
 
 //go:generate mockgen -source=client.go -destination=mock/client.go
 
-type elasticService interface {
-	Insert(index string, doc map[string]interface{}) error
-	InsertBulk(index string, doc map[string]interface{}) error
-	Search(index string, filters ...string) (map[string]interface{}, error)
-	Get(index string, docId string) (DocResponse, error)
+type Service interface {
+	Insert(ctx context.Context, index string, doc interface{}) error
+	InsertBulk(ctx context.Context, index string, docs map[string][]interface{}) error
+	Search(ctx context.Context, index string, filters ...string) (SearchResponse, error)
+	Get(ctx context.Context, index string, docId string) (DocResponse, error)
 }
 
-type Service struct {
+type EsService struct {
 	client *elasticsearch.Client
 	api    *esapi.API
 	logger *zap.Logger
@@ -57,7 +57,7 @@ type DocResponse struct {
 	Source map[string]interface{} `json:"_source"`
 }
 
-func New() (*Service, error) {
+func New() (Service, error) {
 
 	//env
 	if err := environment.Load(); err != nil {
@@ -78,6 +78,16 @@ func New() (*Service, error) {
 			},
 		},
 	})
+
+	//ping check
+	res, err := es.Ping(es.Ping.WithContext(context.Background()))
+	if err != nil {
+		return nil, err
+	}
+
+	if res.IsError() {
+		return nil, fmt.Errorf("failed with status code %v", res.StatusCode)
+	}
 
 	//logger
 	loggerConfig := zap.NewDevelopmentConfig()
@@ -129,14 +139,14 @@ func New() (*Service, error) {
 
 	log.Info(result)
 
-	return &Service{
+	return &EsService{
 		client: es,
 		api:    api,
 		logger: logger,
 	}, nil
 }
 
-func (s *Service) Insert(ctx context.Context, index string, doc interface{}) error {
+func (s *EsService) Insert(ctx context.Context, index string, doc interface{}) error {
 	var body bytes.Buffer
 	if err := json.NewEncoder(&body).Encode(doc); err != nil {
 		s.logger.Error(fmt.Sprintf("failed insert operation %v", ctx.Value("operation")))
@@ -154,7 +164,7 @@ func (s *Service) Insert(ctx context.Context, index string, doc interface{}) err
 	return nil
 }
 
-func (s *Service) InsertBulk(ctx context.Context, index string, docs map[string][]interface{}) error {
+func (s *EsService) InsertBulk(ctx context.Context, index string, docs map[string][]interface{}) error {
 	var body bytes.Buffer
 	if err := json.NewEncoder(&body).Encode(docs); err != nil {
 		log.Error(err)
@@ -176,7 +186,7 @@ func (s *Service) InsertBulk(ctx context.Context, index string, docs map[string]
 	return nil
 }
 
-func (s *Service) Get(ctx context.Context, index string, docId string) (DocResponse, error) {
+func (s *EsService) Get(ctx context.Context, index string, docId string) (DocResponse, error) {
 	var result DocResponse
 
 	res, err := s.client.Get(index, docId)
@@ -198,7 +208,7 @@ func (s *Service) Get(ctx context.Context, index string, docId string) (DocRespo
 	return result, nil
 }
 
-func (s *Service) Search(ctx context.Context, index string, filters ...string) (SearchResponse, error) {
+func (s *EsService) Search(ctx context.Context, index string, filters ...string) (SearchResponse, error) {
 	var result SearchResponse
 	response, err := s.client.Search(s.client.Search.WithIndex(index))
 
@@ -221,7 +231,7 @@ func (s *Service) Search(ctx context.Context, index string, filters ...string) (
 	return result, nil
 }
 
-func (s *Service) parse(reader io.ReadCloser, obj interface{}) error {
+func (s *EsService) parse(reader io.ReadCloser, obj interface{}) error {
 
 	body, err := io.ReadAll(reader)
 

@@ -5,11 +5,14 @@ import (
 	"github.com/ireuven89/hello-world/backend/users/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"go.uber.org/zap"
 	"testing"
 )
 
 type MockService struct {
-	mock mock.Mock
+	logger *zap.Logger
+	repo   UserRepository
+	mock   mock.Mock
 }
 
 func (ms *MockService) CreateUser(input model.UserUpsertInput) (string, error) {

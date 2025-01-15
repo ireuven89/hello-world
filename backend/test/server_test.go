@@ -45,7 +45,7 @@ func TestFunc(t *testing.T) {
 
 func someTask(id int, data chan int) {
 	for taskId := range data {
-		time.Sleep(2 * time.Second)
+		//time.Sleep(2 * time.Second)
 		fmt.Printf("Worker: %d executed Task %d\n", id, taskId)
 	}
 }

@@ -1,4 +1,4 @@
-package user
+package users
 
 import (
 	"fmt"
@@ -8,20 +8,24 @@ import (
 	"github.com/ido50/sqlz"
 	dbmodel "github.com/ireuven89/hello-world/backend/db/model"
 	"github.com/ireuven89/hello-world/backend/db/utils"
-	"github.com/ireuven89/hello-world/backend/redis"
 	"github.com/ireuven89/hello-world/backend/users/model"
 	"go.uber.org/zap"
 )
 
-type Repository struct {
+type Redis interface {
+	Get(key string) (interface{}, error)
+	Set(key string, value interface{}, ttl time.Duration) error
+}
+
+type UserRepository struct {
 	db     *sqlz.DB
-	redis  *redis.Service
+	redis  Redis
 	logger *zap.Logger
 }
 
-func New(db *sqlz.DB, redis *redis.Service, logger *zap.Logger) *Repository {
+func New(db *sqlz.DB, redis Redis, logger *zap.Logger) *UserRepository {
 
-	return &Repository{
+	return &UserRepository{
 		db:     db,
 		redis:  redis,
 		logger: logger,
@@ -31,7 +35,7 @@ func New(db *sqlz.DB, redis *redis.Service, logger *zap.Logger) *Repository {
 const redisQueryTTl = time.Minute * 3
 
 // ListUsers - this method queries users from DB
-func (r *Repository) ListUsers(input model.UserFetchInput) ([]model.User, error) {
+func (r *UserRepository) ListUsers(input model.UserFetchInput) ([]model.User, error) {
 	var result []model.User
 
 	cachedQuery := fmt.Sprintf("ListUsers:%s%s%s%v%v", input.Region, input.Name, input.Uuid, input.Page, input.Size)
@@ -79,7 +83,7 @@ func (r *Repository) ListUsers(input model.UserFetchInput) ([]model.User, error)
 }
 
 // FindUser - this method queries single users from DB
-func (r *Repository) FindUser(uuid string) (model.User, error) {
+func (r *UserRepository) FindUser(uuid string) (model.User, error) {
 	var result model.User
 
 	cachedQuery := fmt.Sprintf("FindUser:%s", uuid)
@@ -115,7 +119,7 @@ func (r *Repository) FindUser(uuid string) (model.User, error) {
 }
 
 // Upsert - this method upsert users to DB
-func (r *Repository) Upsert(input model.UserUpsertInput) (string, error) {
+func (r *UserRepository) Upsert(input model.UserUpsertInput) (string, error) {
 	var id string
 	var create bool
 
@@ -163,7 +167,7 @@ func (r *Repository) Upsert(input model.UserUpsertInput) (string, error) {
 }
 
 // Delete - this query deletes users from DB
-func (r *Repository) Delete(uuid string) error {
+func (r *UserRepository) Delete(uuid string) error {
 
 	q := r.db.DeleteFrom("users").Where(sqlz.Eq("uuid", uuid))
 
