@@ -15,6 +15,31 @@ type MockService struct {
 	mock   mock.Mock
 }
 
+type MockUserRepository struct {
+	mock mock.Mock
+}
+
+func (m *MockUserRepository) ListUsers(input model.UserFetchInput) ([]model.User, error) {
+	args := m.mock.Called(input)
+
+	return args.Get(0).([]model.User), args.Error(1)
+}
+func (m *MockUserRepository) FindUser(uuid string) (model.User, error) {
+	args := m.mock.Called(uuid)
+
+	return args.Get(0).(model.User), args.Error(1)
+}
+func (m *MockUserRepository) Upsert(input model.UserUpsertInput) (string, error) {
+	args := m.mock.Called(input)
+
+	return args.Get(0).(string), args.Error(1)
+}
+func (m *MockUserRepository) Delete(uuid string) error {
+	args := m.mock.Called(uuid)
+
+	return args.Error(0)
+}
+
 func (ms *MockService) CreateUser(input model.UserUpsertInput) (string, error) {
 	args := ms.mock.Called(input)
 
@@ -42,7 +67,8 @@ type CreateTest struct {
 }
 
 func TestService_CreateUser(t *testing.T) {
-	mockService := MockService{mock: mock.Mock{}}
+	userRepo := MockUserRepository{mock.Mock{}}
+	mockService := MockService{mock: mock.Mock{}, repo: &userRepo}
 	tests := []CreateTest{
 		{
 			name: "fail on invalid input",
@@ -88,7 +114,8 @@ type DeleteTest struct {
 }
 
 func TestService_DeleteUser(t *testing.T) {
-	mockService := MockService{mock: mock.Mock{}}
+	userRepo := MockUserRepository{mock.Mock{}}
+	mockService := MockService{mock: mock.Mock{}, repo: &userRepo}
 	tests := []DeleteTest{
 		{
 			name:     "fail on invalid input",
@@ -111,29 +138,33 @@ func TestService_DeleteUser(t *testing.T) {
 }
 
 type GetUserTest struct {
-	name     string
-	mockCall *mock.Call
-	input    string
-	wantErr  bool
-	expected model.User
+	name               string
+	mockServiceCall    *mock.Call
+	mockRepositoryCall *mock.Call
+	input              string
+	wantErr            bool
+	expected           model.User
 }
 
 func TestService_GetUser(t *testing.T) {
-	mockService := MockService{mock: mock.Mock{}}
+	mockRepo := MockUserRepository{mock: mock.Mock{}}
+	mockService := MockService{mock: mock.Mock{}, repo: &mockRepo}
 	tests := []GetUserTest{
 		{
-			name:     "fail on invalid input",
-			input:    "",
-			mockCall: mockService.mock.On("GetUser", "").Return(model.User{}, errors.New("failed to get user - not found")),
-			wantErr:  true,
-			expected: model.User{},
+			name:               "fail on invalid input",
+			input:              "",
+			mockServiceCall:    mockService.mock.On("GetUser", "").Return(model.User{}, errors.New("failed to get user - not found")),
+			mockRepositoryCall: mockRepo.mock.On("FindUser", "").Return(nil, errors.New("user not found")),
+			wantErr:            true,
+			expected:           model.User{},
 		},
 		{
-			name:     "success",
-			input:    "uuid",
-			mockCall: mockService.mock.On("GetUser", "uuid").Return(model.User{Uuid: "uuid"}, nil),
-			wantErr:  false,
-			expected: model.User{Uuid: "uuid"},
+			name:               "success",
+			input:              "uuid",
+			mockServiceCall:    mockService.mock.On("GetUser", "uuid").Return(model.User{Uuid: "uuid"}, nil),
+			mockRepositoryCall: mockRepo.mock.On("FindUser", "uuid").Return(model.User{Uuid: "uuid"}, nil),
+			wantErr:            false,
+			expected:           model.User{Uuid: "uuid"},
 		},
 	}
 
