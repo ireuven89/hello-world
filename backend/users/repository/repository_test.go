@@ -113,3 +113,37 @@ func TestRepository_GetWithCaching(t *testing.T) {
 	mockRedis.AssertCalled(t, "Get", cachedQuery) // Ensure cache is checked
 	mockSql.ExpectationsWereMet()
 }
+
+func TestUserRepository_ListUsersWithCaching(t *testing.T) {
+	mockdb, mockSql, err := sqlmock.New()
+	mockSqlz := MockDB{sqlz: sqlz.New(mockdb, "mysql")}
+	mockRedis := new(MockRedisClient)
+	logger := zaptest.NewLogger(t)
+	input := model.UserFetchInput{Name: "name"}
+
+	repo := New(mockSqlz.sqlz, mockRedis, logger)
+
+	cachedQuery := fmt.Sprintf("ListUsers:%s%s%s%v%v", input.Region, input.Name, input.Uuid, input.Page, input.Size)
+	expectedQuery := `SELECT id, uuid, name, region FROM users WHERE name = ?`
+	rows := sqlmock.NewRows([]string{"id", "uuid", "name", "region"}).
+		AddRow(1, "1234", "name", "US")
+	cachedUser := []model.User{{
+		ID:     1,
+		Uuid:   "1234",
+		Name:   "name",
+		Region: "US",
+	},
+	}
+
+	mockSql.ExpectQuery(expectedQuery).WithArgs("name").WillReturnRows(rows)
+
+	// Step 4: Run the function being tested
+	var result []model.User
+	mockRedis.On("Get", fmt.Sprintf("ListUsers:%s%s%s%v%v", input.Region, input.Name, input.Uuid, input.Page, input.Size)).Return(cachedUser, nil)
+
+	result, err = repo.ListUsers(input)
+	assert.NoError(t, err, "Error should be nil on cache hit")
+	assert.Equal(t, cachedUser, result, "Returned user should match cached user")
+	mockRedis.AssertCalled(t, "Get", cachedQuery) // Ensure cache is checked
+	mockSql.ExpectationsWereMet()
+}
