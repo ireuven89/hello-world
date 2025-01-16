@@ -5,9 +5,10 @@ import (
 )
 
 type User struct {
-	ID   int    `json:"-" db:"id"`
-	Uuid string `json:"uuid" db:"uuid"`
-	Name string `json:"name" db:"name"`
+	ID     int    `json:"-" db:"id"`
+	Uuid   string `json:"uuid" db:"uuid"`
+	Name   string `json:"name" db:"name"`
+	Region string `json:"region" db:"region"`
 }
 
 func (u *User) IsEmpty() bool {
