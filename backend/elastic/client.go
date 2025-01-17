@@ -56,6 +56,12 @@ type DocResponse struct {
 	Source map[string]interface{} `json:"_source"`
 }
 
+type User struct {
+	Age       string `json:"age"`
+	CreatedAt string `json:"created_at"`
+	Name      string `json:"name"`
+}
+
 func New(logger *zap.Logger) (Service, error) {
 
 	//env
@@ -176,6 +182,69 @@ func (s *EsService) Get(ctx context.Context, index string, docId string) (DocRes
 	println(res.Body)
 
 	return result, nil
+}
+
+func (s *EsService) BulkSearch(ctx context.Context, queries []map[string]interface{}, index string) (interface{}, error) {
+	var buf bytes.Buffer
+
+	// Build the bulk search request body
+	for _, query := range queries {
+		// Metadata line for each query
+		meta := map[string]string{"index": index}
+		metaLine, err := json.Marshal(meta)
+		if err != nil {
+			return nil, fmt.Errorf("error marshalling metadata: %w", err)
+		}
+		buf.Write(metaLine)
+		buf.WriteString("\n")
+
+		// Query line
+		queryLine, err := json.Marshal(query)
+		if err != nil {
+			return nil, fmt.Errorf("error marshalling query: %w", err)
+		}
+		buf.Write(queryLine)
+		buf.WriteString("\n")
+	}
+
+	// Execute the bulk search request
+	res, err := s.client.Msearch(&buf,
+		s.client.Msearch.WithContext(ctx),
+		s.client.Msearch.WithPretty(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error executing bulk search: %w", err)
+	}
+	defer res.Body.Close()
+
+	// Handle response errors
+	if res.IsError() {
+		return nil, fmt.Errorf("error response from Elasticsearch: %s", res.String())
+	}
+
+	// Parse the response
+	var result struct {
+		Responses []struct {
+			Hits struct {
+				Hits []struct {
+					Source User `json:"_source"`
+				} `json:"hits"`
+			} `json:"hits"`
+		} `json:"responses"`
+	}
+	if err = json.NewDecoder(res.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("error decoding Elasticsearch response: %w", err)
+	}
+
+	// Aggregate results
+	var users []User
+	for _, response := range result.Responses {
+		for _, hit := range response.Hits.Hits {
+			users = append(users, hit.Source)
+		}
+	}
+
+	return users, nil
 }
 
 func (s *EsService) Search(ctx context.Context, index string, filters ...string) (SearchResponse, error) {
