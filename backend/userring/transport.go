@@ -35,6 +35,7 @@ type Transport struct {
 
 func (t *Transport) ListenAndServe(port string) {
 	log.Printf("Starting user server on port %s...", port)
+
 	err := http.ListenAndServe(":"+port, t.router)
 	if err != nil {
 		log.Fatalf("Server failed to start: %v", err)
@@ -72,11 +73,11 @@ func RegisterRoutes(router *httprouter.Router, s Service) {
 		encodeDeleteUserResponse,
 	)
 
-	router.Handler(http.MethodGet, "/userring/:id", getUserHandler)
-	router.Handler(http.MethodGet, "/userring", getUsersHandler)
-	router.Handler(http.MethodPost, "/userring", createUserHandler)
-	router.Handler(http.MethodPut, "/userring", updateUserHandler)
-	router.Handler(http.MethodDelete, "/userring/:id", deleteUserHandler)
+	router.Handler(http.MethodGet, "/users/:id", getUserHandler)
+	router.Handler(http.MethodGet, "/users", getUsersHandler)
+	router.Handler(http.MethodPost, "/users", createUserHandler)
+	router.Handler(http.MethodPut, "/users", updateUserHandler)
+	router.Handler(http.MethodDelete, "/users/:id", deleteUserHandler)
 }
 
 type GetUserRequest struct {

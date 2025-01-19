@@ -31,5 +31,6 @@ type ItemInput struct {
 type ListInput struct {
 	Price       string
 	Name        string
+	Link        string
 	Description string
 }

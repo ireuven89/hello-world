@@ -9,7 +9,10 @@ import (
 
 	"github.com/ireuven89/hello-world/backend/authenticating/model"
 	"github.com/ireuven89/hello-world/backend/db/utils"
+<<<<<<< HEAD
 	utils2 "github.com/ireuven89/hello-world/backend/utils"
+=======
+>>>>>>> 4f75e37 (authenticathing service and additional changes)
 )
 
 type Redis interface {
@@ -30,7 +33,10 @@ func New(logger *zap.Logger, db *sqlz.DB) *Repo {
 	}
 }
 
+<<<<<<< HEAD
 // retry - Save save to name
+=======
+>>>>>>> 4f75e37 (authenticathing service and additional changes)
 func (r *Repo) Save(username, password string) error {
 	id := uuid.New().String()
 
@@ -70,6 +76,7 @@ func (r *Repo) Find(username string) (model.User, error) {
 		Password: result.Password,
 	}, nil
 }
+<<<<<<< HEAD
 
 func (r *Repo) DbStatus() utils2.DbStatus {
 	var connected bool
@@ -83,3 +90,5 @@ func (r *Repo) DbStatus() utils2.DbStatus {
 	}
 
 }
+=======
+>>>>>>> 4f75e37 (authenticathing service and additional changes)

@@ -51,7 +51,8 @@ func MakeEndpointListItems(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req, ok := request.(ListItemsRequest)
 		if !ok {
-			return nil, fmt.Errorf("MakeEndpointListItems failed cast request")
+
+			return nil, fmt.Errorf("MakeEndpointGetUser failed cast request")
 		}
 
 		result, err := s.GetItems(req.input)
@@ -77,7 +78,8 @@ func MakeEndpointCreateItem(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req, ok := request.(CreateItemRequest)
 		if !ok {
-			return nil, fmt.Errorf("MakeEndpointCreateItem failed cast request")
+
+			return nil, fmt.Errorf("MakeEndpointGetUser failed cast request")
 		}
 
 		id, err := s.CreateItem(req.item)

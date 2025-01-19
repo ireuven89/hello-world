@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
+<<<<<<< HEAD
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/ireuven89/hello-world/backend/authenticating/mocks"
@@ -16,12 +17,41 @@ import (
 func TestAuthService_RegisterSuccess(t *testing.T) {
 	logger := zap.NewNop()
 	mockInMemStore := mocks.InMemMock{Mock: mock.Mock{}}
+=======
+
+	"github.com/ireuven89/hello-world/backend/authenticating/model"
+)
+
+type InMemMock struct {
+	mock mock.Mock
+}
+
+func (ma *InMemMock) Save(username, password string) error {
+	args := ma.mock.Called(username, password)
+
+	return args.Error(0)
+}
+func (ma *InMemMock) Find(username string) (model.User, error) {
+	args := ma.mock.Called(username)
+
+	return args.Get(0).(model.User), args.Error(1)
+}
+
+func TestAuthService_RegisterSuccess(t *testing.T) {
+	logger := zap.NewNop()
+	mockInMemStore := InMemMock{mock: mock.Mock{}}
+>>>>>>> 4f75e37 (authenticathing service and additional changes)
 	service := NewAuthService(&mockInMemStore, logger)
 
 	//success mock
 	user := "model"
 	password := "password"
+<<<<<<< HEAD
 	mockInMemStore.Mock.On("Save", user, mock.Anything).Return(nil)
+=======
+	mockInMemStore.mock.On("Save", user, mock.Anything).Return(nil)
+
+>>>>>>> 4f75e37 (authenticathing service and additional changes)
 	err := service.Register(user, password)
 
 	assert.Nil(t, err)
@@ -29,6 +59,7 @@ func TestAuthService_RegisterSuccess(t *testing.T) {
 
 func TestAuthService_RegisterFail(t *testing.T) {
 	logger := zap.NewNop()
+<<<<<<< HEAD
 	mockInMemStore := new(mocks.InMemMock)
 	service := NewAuthService(mockInMemStore, logger)
 
@@ -36,10 +67,21 @@ func TestAuthService_RegisterFail(t *testing.T) {
 	user := "model"
 	password := "password"
 	mockInMemStore.Mock.On("Save", user, mock.Anything).Return(errors.New("invalid password"))
+=======
+	mockInMemStore := InMemMock{mock: mock.Mock{}}
+	service := NewAuthService(&mockInMemStore, logger)
+
+	//success mock
+	user := "model"
+	password := "password"
+	mockInMemStore.mock.On("Save", user, mock.Anything).Return(errors.New("invalid password"))
+
+>>>>>>> 4f75e37 (authenticathing service and additional changes)
 	err := service.Register(user, password)
 
 	assert.Error(t, err)
 }
+<<<<<<< HEAD
 
 func TestAuthService_Login(t *testing.T) {
 	mockUserStore := new(mocks.InMemMock)
@@ -69,3 +111,5 @@ func TestAuthService_Login(t *testing.T) {
 
 	token, err = service.Login("unknown", password)
 }
+=======
+>>>>>>> 4f75e37 (authenticathing service and additional changes)

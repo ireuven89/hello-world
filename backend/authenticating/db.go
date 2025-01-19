@@ -17,16 +17,17 @@ func MustNewDB(config utils.DataBaseConnection) (*sqlz.DB, string, error) {
 		User:   os.Getenv(config.UserName),
 		Passwd: os.Getenv(config.Password),
 		Addr:   os.Getenv(config.Host),
+
 		DBName: "auth",
 		Net:    "tcp",
 	}
 	add := cfg.FormatDSN()
 
-	fmt.Printf(add)
 	authDB, err := sql.Open("mysql", add)
 
 	if err != nil {
 		fmt.Printf("authenticating.MustNewDB failed to dial to db auth: host %s address: %v", os.Getenv(config.Host), err)
+
 		return nil, "", err
 	}
 

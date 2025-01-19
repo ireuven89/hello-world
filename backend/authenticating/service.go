@@ -60,7 +60,7 @@ func (service *AuthService) Login(username, password string) (string, error) {
 	}
 
 	// Verify password
-	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return "", errors.New("invalid credentials")
 	}
 

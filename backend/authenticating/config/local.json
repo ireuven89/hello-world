@@ -21,6 +21,6 @@
       "host": "ELASTIC_HOST",
       "user": "ELASTIC_USER",
       "password": "ELASTIC_PASSWORD"
-    }
   }
+}
 }

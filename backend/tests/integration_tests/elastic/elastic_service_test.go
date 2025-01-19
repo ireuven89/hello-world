@@ -15,7 +15,10 @@ import (
 
 	"github.com/ireuven89/hello-world/backend/elastic"
 	"github.com/ireuven89/hello-world/backend/tests/config"
+<<<<<<< HEAD
 	"github.com/ireuven89/hello-world/backend/utils"
+=======
+>>>>>>> 4f75e37 (authenticathing service and additional changes)
 )
 
 var configJson config.ConfigurationJson

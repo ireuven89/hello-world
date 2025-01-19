@@ -19,26 +19,30 @@ import (
 	"github.com/ireuven89/hello-world/backend/environment"
 	"github.com/ireuven89/hello-world/backend/itemming"
 	itemrepo "github.com/ireuven89/hello-world/backend/itemming/repository"
+
 	"github.com/ireuven89/hello-world/backend/publishing"
 	"github.com/ireuven89/hello-world/backend/redis"
 	"github.com/ireuven89/hello-world/backend/routes"
 	"github.com/ireuven89/hello-world/backend/subscribing"
 	"github.com/ireuven89/hello-world/backend/userring"
 	userrepo "github.com/ireuven89/hello-world/backend/userring/repository"
+
 	"github.com/ireuven89/hello-world/backend/utils"
 )
 
 type Server struct {
 	UserService userring.Service
 	ItemService itemming.Service
-	Logger      *zap.Logger
-	Echo        *echo.Echo
-	Elastic     elastic.Service
-	AWSClient   aws.Service
-	Pub         publishing.PService
-	Sub         subscribing.SService
-	Redis       redis.Redis
-	Auth        authenticating.Service
+
+	Logger    *zap.Logger
+	Echo      *echo.Echo
+	Elastic   elastic.Service
+	AWSClient aws.Service
+	Pub       publishing.PService
+	Sub       subscribing.SService
+	Redis     redis.Redis
+
+	Auth authenticating.Service
 }
 
 func New() (*Server, error) {
@@ -71,7 +75,6 @@ func New() (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	//authenticating
 	authDB, dir, err := authenticating.MustNewDB(config.Databases["mysql"])
 	if err != nil {
@@ -135,7 +138,6 @@ func New() (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	//subscribing
 	subscriberr, err := subscribing.New(logger)
 	if err != nil {
@@ -160,8 +162,6 @@ func New() (*Server, error) {
 	bidderRoute := httprouter.New()
 	bidderTransport := biddering.NewTransport(bidderService, bidderRoute)
 	go bidderTransport.ListenAndServe(bidderConfig.ServicePort)
-
-	//recovering
 
 	//remoting
 	echoServer := echo.New()

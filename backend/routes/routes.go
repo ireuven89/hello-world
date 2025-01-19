@@ -36,11 +36,12 @@ func AssignRoutes(e *echo.Echo) {
 	//handlers
 
 	//model
-	group.Add(http.MethodGet, "/userring", GetUsersHandler)
-	group.Add(http.MethodGet, "/userring/:userUuid", GetUsersHandler)
-	group.Add(http.MethodPost, "/userring", UpsertUserHandler)
-	group.Add(http.MethodPut, "/userring/:userUuid", PutUserHandler)
-	group.Add(http.MethodDelete, "/userring/:userUuid", DeleteUserHandler)
+
+	group.Add(http.MethodGet, "/users", GetUsersHandler)
+	group.Add(http.MethodGet, "/users/:userUuid", GetUsersHandler)
+	group.Add(http.MethodPost, "/users", UpsertUserHandler)
+	group.Add(http.MethodPut, "/users/:userUuid", PutUserHandler)
+	group.Add(http.MethodDelete, "/users/:userUuid", DeleteUserHandler)
 
 	//auction
 	group.Add(http.MethodGet, "/auctions", GetAuctionsHandler)

@@ -90,12 +90,25 @@ func RegisterRoutes(router *httprouter.Router, s Service) {
 	router.Handler(http.MethodPost, "/items", createItemHandler)
 	router.Handler(http.MethodPut, "/items", createItemsHandler)
 	router.Handler(http.MethodPatch, "/items/:uuid", updateItemHandler)
+	router.Handler(http.MethodPut, "/items", updateItemHandler)
 	router.Handler(http.MethodDelete, "/items/:uuid", deleteItemHandler)
 }
 
 func decodeHealthItemRequest(ctx context.Context, r *http.Request) (request interface{}, err error) {
 
-	return nil, nil
+	return GetItemRequest{
+		Uuid: r.PathValue("uuid"),
+	}, nil
+}
+
+func encodeHealthItemResponse(ctx context.Context, writer http.ResponseWriter, response interface{}) error {
+	res, ok := response.(GetItemResponse)
+
+	if !ok {
+		return errors.New("encodeGetItemResponse.failed encode response")
+	}
+
+	return json.NewEncoder(writer).Encode(res)
 }
 
 func decodeGetItemRequest(ctx context.Context, r *http.Request) (request interface{}, err error) {
@@ -119,13 +132,13 @@ func decodeListItemsRequest(ctx context.Context, r *http.Request) (request inter
 	queryParams := r.URL.Query()
 	name := queryParams.Get("name")
 	description := queryParams.Get("description")
-	price := queryParams.Get("link")
+	price := queryParams.Get("price")
 
 	return ListItemsRequest{
 		input: model.ListInput{
-			Price:       price,
 			Description: description,
 			Name:        name,
+			Price:       price,
 		},
 	}, nil
 }

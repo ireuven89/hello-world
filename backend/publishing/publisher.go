@@ -72,6 +72,7 @@ func New(logger *zap.Logger) (PService, error) {
 		logger.Error("failed connection to rabbit")
 		return nil, err
 	}
+
 	client := &Publisher{
 		conn:    conn,
 		pub:     &rabbit.Publisher{},

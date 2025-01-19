@@ -31,7 +31,11 @@ type Router interface {
 }
 
 func (t *Transport) ListenAndServe(port string) {
+<<<<<<< HEAD
 	log.Printf("Starting auth server on port %s...", port)
+=======
+	log.Printf("Starting server on port %s...", port)
+>>>>>>> 4f75e37 (authenticathing service and additional changes)
 	err := http.ListenAndServe(":"+port, t.router)
 	if err != nil {
 		log.Fatalf("Server failed to start: %v", err)
@@ -40,12 +44,15 @@ func (t *Transport) ListenAndServe(port string) {
 
 func RegisterRoutes(router *httprouter.Router, s Service) {
 
+<<<<<<< HEAD
 	healthHandler := kithttp.NewServer(
 		MakeEndpointHealth(s),
 		decodeHealthRequest,
 		kithttp.EncodeJSONResponse,
 	)
 
+=======
+>>>>>>> 4f75e37 (authenticathing service and additional changes)
 	registerUserHandler := kithttp.NewServer(
 		MakeEndpointRegister(s),
 		decodeRegisterRequest,
@@ -64,16 +71,22 @@ func RegisterRoutes(router *httprouter.Router, s Service) {
 		encodeVerifyResponse,
 	)
 
+<<<<<<< HEAD
 	router.Handler(http.MethodGet, "/health", healthHandler)
+=======
+>>>>>>> 4f75e37 (authenticathing service and additional changes)
 	router.Handler(http.MethodPost, "/register", registerUserHandler)
 	router.Handler(http.MethodPost, "/login", loginUserHandler)
 	router.Handler(http.MethodPost, "/verify", verifyTokenHandler)
 }
 
+<<<<<<< HEAD
 func decodeHealthRequest(ctx context.Context, r *http.Request) (request interface{}, err error) {
 	return nil, nil
 }
 
+=======
+>>>>>>> 4f75e37 (authenticathing service and additional changes)
 func decodeRegisterRequest(ctx context.Context, r *http.Request) (request interface{}, err error) {
 	var req RegisterRequest
 

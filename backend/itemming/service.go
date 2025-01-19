@@ -71,6 +71,7 @@ func (s *ServiceItem) GetItem(uuid string) (model.Item, error) {
 
 	if err != nil {
 		s.logger.Error("ServiceItem.GetItem failed getting item", zap.Error(err))
+
 		return model.Item{}, err
 	}
 
@@ -192,8 +193,9 @@ func (s *ServiceItem) DeleteItem(uuid string) error {
 
 	if err != nil {
 		s.logger.Error("failed to delete itemming", zap.Any("delete itemming", uuid), zap.Error(err))
+
 		return err
 	}
 
-	return err
+	return nil
 }
