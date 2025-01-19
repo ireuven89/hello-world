@@ -17,6 +17,7 @@ import (
 func TestAuthService_RegisterSuccess(t *testing.T) {
 	logger := zap.NewNop()
 	mockInMemStore := mocks.InMemMock{Mock: mock.Mock{}}
+<<<<<<< HEAD
 =======
 
 	"github.com/ireuven89/hello-world/backend/authenticating/model"
@@ -43,15 +44,22 @@ func TestAuthService_RegisterSuccess(t *testing.T) {
 >>>>>>> 4f75e37 (authenticathing service and additional changes)
 	service := NewAuthService(&mockInMemStore, logger)
 
+=======
+	service := NewAuthService(&mockInMemStore, logger)
+
+>>>>>>> 6356917 (authenticathing service and additional changes - merge)
 	//success mock
 	user := "model"
 	password := "password"
 <<<<<<< HEAD
 	mockInMemStore.Mock.On("Save", user, mock.Anything).Return(nil)
+<<<<<<< HEAD
 =======
 	mockInMemStore.mock.On("Save", user, mock.Anything).Return(nil)
 
 >>>>>>> 4f75e37 (authenticathing service and additional changes)
+=======
+>>>>>>> 6356917 (authenticathing service and additional changes - merge)
 	err := service.Register(user, password)
 
 	assert.Nil(t, err)
@@ -67,6 +75,7 @@ func TestAuthService_RegisterFail(t *testing.T) {
 	user := "model"
 	password := "password"
 	mockInMemStore.Mock.On("Save", user, mock.Anything).Return(errors.New("invalid password"))
+<<<<<<< HEAD
 =======
 	mockInMemStore := InMemMock{mock: mock.Mock{}}
 	service := NewAuthService(&mockInMemStore, logger)
@@ -77,6 +86,8 @@ func TestAuthService_RegisterFail(t *testing.T) {
 	mockInMemStore.mock.On("Save", user, mock.Anything).Return(errors.New("invalid password"))
 
 >>>>>>> 4f75e37 (authenticathing service and additional changes)
+=======
+>>>>>>> 6356917 (authenticathing service and additional changes - merge)
 	err := service.Register(user, password)
 
 	assert.Error(t, err)

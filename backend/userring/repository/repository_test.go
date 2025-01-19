@@ -197,6 +197,7 @@ func TestUserRepository_Upsert_Update(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to initialize mock DB: %v", err)
 	}
+	// Initialize the logger and mock database
 	defer mockDb.Close()
 
 	// Create a UserRepository instance

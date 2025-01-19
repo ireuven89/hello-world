@@ -42,13 +42,19 @@ func TestRepo_Save(t *testing.T) {
 		WillReturnResult(
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6356917 (authenticathing service and additional changes - merge)
 			sqlmock.NewResult(1, 1), // Return the mocks UUID as the inserted id
 =======
 			sqlmock.NewResult(1, 1), // Return the mock UUID as the inserted id
 >>>>>>> 4f75e37 (authenticathing service and additional changes)
+<<<<<<< HEAD
 =======
 			sqlmock.NewResult(1, 1), // Return the mock UUID as the inserted id
 >>>>>>> 4f75e37 (authenticathing service and additional changes)
+=======
+>>>>>>> 6356917 (authenticathing service and additional changes - merge)
 		)
 
 	err = repo.Save(user, password)
