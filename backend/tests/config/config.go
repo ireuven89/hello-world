@@ -20,7 +20,7 @@ func GetConfigJson() ConfigurationJson {
 		return config
 	}
 	dirPath := filepath.Dir(filePath)
-	file, err := os.ReadFile(dirPath + "/config.json")
+	file, err := os.ReadFile(dirPath + "/dev.json")
 	err = json.Unmarshal(file, &config)
 	if err != nil {
 		return ConfigurationJson{}

@@ -54,6 +54,20 @@ services:
       retries: 3
       interval: 30s
 
+  auth-service:
+    image: auth-service
+    build: .
+    container_name: auth-service
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    environment:
+      - DEBUG=${DEBUG}
+      - USERS_DB_USER=root
+      - USERS_DB_PASSWORD=${USERS_DB_PASSWORD}
+    ports:
+      - "8000:8000"
+
   users-db:
     image: mysql:latest
     container_name: users_db
@@ -62,6 +76,21 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=${USERS_DB_ROOT_PASSWORD}
       - MYSQL_DATABASE=users
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u root --password=${MYSQL_ROOT_PASSWORD}
+      start_period: 10s
+      interval: 30s
+      retries: 3
+    volumes:
+      - /var/lib/mysql
+  auth-db:
+    image: mysql:latest
+    container_name: auth_db
+    ports:
+      - "3010:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${USERS_DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=auth
     healthcheck:
       test: mysqladmin ping -h 127.0.0.1 -u root --password=${MYSQL_ROOT_PASSWORD}
       start_period: 10s
@@ -110,7 +139,7 @@ services:
       - /var/lib/jenkins
   rabbit:
     image: rabbitmq:management-alpine
-    container_name: rabbit-mq
+    container_name: subscribing-mq
     ports:
       - "15672:15672"
       - '5672:5672'

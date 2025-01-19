@@ -1,8 +1,9 @@
 package item
 
 import (
-	"github.com/ireuven89/hello-world/backend/item/model"
 	"go.uber.org/zap"
+
+	"github.com/ireuven89/hello-world/backend/item/model"
 )
 
 type Service interface {
@@ -45,12 +46,13 @@ func (s *ServiceItem) GetItem(uuid string) (model.Item, error) {
 	result, err := s.repo.GetItem(uuid)
 
 	if err != nil {
-		s.logger.Error("failed to get query", zap.Any("get items", uuid), zap.Error(err))
+		s.logger.Error("ServiceItem.GetItem failed to get query", zap.Any("get items", uuid), zap.Error(err))
 		return model.Item{}, err
 	}
 
 	return result, err
 }
+
 func (s *ServiceItem) UpdateItem(item model.ItemInput) error {
 	_, err := s.repo.Upsert(item)
 

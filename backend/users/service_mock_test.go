@@ -2,11 +2,13 @@ package users
 
 import (
 	"errors"
-	"github.com/ireuven89/hello-world/backend/users/model"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
-	"testing"
+
+	"github.com/ireuven89/hello-world/backend/users/model"
 )
 
 type MockService struct {
@@ -79,7 +81,7 @@ func TestService_CreateUser(t *testing.T) {
 			mockCall: mockService.mock.On("CreateUser", model.UserUpsertInput{
 				Uuid: "",
 				Name: "",
-			}).Return("", errors.New("failed to create user missing input")),
+			}).Return("", errors.New("failed to create model missing input")),
 			wantErr: true,
 			output:  "",
 		},
@@ -120,7 +122,7 @@ func TestService_DeleteUser(t *testing.T) {
 		{
 			name:     "fail on invalid input",
 			input:    "",
-			mockCall: mockService.mock.On("DeleteUser", "").Return(errors.New("failed to delete user not found")),
+			mockCall: mockService.mock.On("DeleteUser", "").Return(errors.New("failed to delete model not found")),
 			wantErr:  true,
 		},
 		{
@@ -153,8 +155,8 @@ func TestService_GetUser(t *testing.T) {
 		{
 			name:               "fail on invalid input",
 			input:              "",
-			mockServiceCall:    mockService.mock.On("GetUser", "").Return(model.User{}, errors.New("failed to get user - not found")),
-			mockRepositoryCall: mockRepo.mock.On("FindUser", "").Return(nil, errors.New("user not found")),
+			mockServiceCall:    mockService.mock.On("GetUser", "").Return(model.User{}, errors.New("failed to get model - not found")),
+			mockRepositoryCall: mockRepo.mock.On("FindUser", "").Return(nil, errors.New("model not found")),
 			wantErr:            true,
 			expected:           model.User{},
 		},

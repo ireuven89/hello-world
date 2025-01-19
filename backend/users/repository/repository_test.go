@@ -4,14 +4,18 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/ido50/sqlz"
-	"github.com/ireuven89/hello-world/backend/users/model"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"go.uber.org/zap/zaptest"
-	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/ido50/sqlz"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
+	"gopkg.in/DATA-DOG/go-sqlmock.v1"
+
+	"github.com/ireuven89/hello-world/backend/users/model"
 )
 
 type MockRedisClient struct {
@@ -109,7 +113,7 @@ func TestRepository_GetWithCaching(t *testing.T) {
 
 	result, err = repo.FindUser("uuid")
 	assert.NoError(t, err, "Error should be nil on cache hit")
-	assert.Equal(t, cachedUser, result, "Returned user should match cached user")
+	assert.Equal(t, cachedUser, result, "Returned model should match cached model")
 	mockRedis.AssertCalled(t, "Get", cachedQuery) // Ensure cache is checked
 	mockSql.ExpectationsWereMet()
 }
@@ -143,7 +147,81 @@ func TestUserRepository_ListUsersWithCaching(t *testing.T) {
 
 	result, err = repo.ListUsers(input)
 	assert.NoError(t, err, "Error should be nil on cache hit")
-	assert.Equal(t, cachedUser, result, "Returned user should match cached user")
+	assert.Equal(t, cachedUser, result, "Returned model should match cached model")
 	mockRedis.AssertCalled(t, "Get", cachedQuery) // Ensure cache is checked
 	mockSql.ExpectationsWereMet()
+}
+
+func TestUpsert_Create(t *testing.T) {
+	// Setup mock database and logger
+	logger := zap.NewNop() // No-op logger for testing purposes
+	mockDb, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to initialize mock DB: %v", err)
+	}
+	defer mockDb.Close()
+
+	// Create a UserRepository instance
+	repo := &UserRepository{
+		db:     sqlz.New(mockDb, "mysql"),
+		logger: logger,
+	}
+
+	// Input data for the Upsert method
+	input := model.UserUpsertInput{
+		Name:   "John Doe",
+		Region: "North",
+	}
+
+	// Generate a mock UUID to return for the created user
+	mockUuid := uuid.New().String()
+
+	// Setup the expectation for the insert query
+	mock.ExpectQuery("INSERT INTO users ").WithArgs(sqlmock.AnyArg(), input.Name, input.Region).WillReturnRows(
+		sqlmock.NewRows([]string{"id"}).AddRow(mockUuid),
+	)
+
+	// Run the Upsert method
+	id, err := repo.Upsert(input)
+
+	// Assertions
+	assert.Nil(t, err)
+	assert.Equal(t, mockUuid, id)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUserRepository_Upsert_Update(t *testing.T) {
+	// Initialize the logger and mock database
+	logger := zap.NewNop()
+	mockDb, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to initialize mock DB: %v", err)
+	}
+	defer mockDb.Close()
+
+	// Create a UserRepository instance
+	repo := &UserRepository{
+		db:     sqlz.New(mockDb, "mysql"),
+		logger: logger,
+	}
+
+	// Input data for the update scenario
+	input := model.UserUpsertInput{
+		Uuid:   "existing-uuid", // This triggers the update path
+		Name:   "Updated Name",
+		Region: "Updated Region",
+	}
+
+	// Mock the expected update query
+	mock.ExpectQuery(`UPDATE users SET name = \?, region = \? WHERE uuid = \? RETURNING id`).
+		WithArgs(input.Name, input.Region, input.Uuid).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(input.Uuid))
+
+	// Run the Upsert method
+	id, err := repo.Upsert(input)
+
+	// Assertions
+	assert.Nil(t, err)                            // Ensure no error occurred
+	assert.Equal(t, input.Uuid, id)               // Ensure the returned ID matches the UUID
+	assert.NoError(t, mock.ExpectationsWereMet()) // Ensure mock expectations were met
 }

@@ -35,7 +35,7 @@ func AssignRoutes(e *echo.Echo) {
 
 	//handlers
 
-	//user
+	//model
 	group.Add(http.MethodGet, "/users", GetUsersHandler)
 	group.Add(http.MethodGet, "/users/:userUuid", GetUsersHandler)
 	group.Add(http.MethodPost, "/users", UpsertUserHandler)
@@ -85,14 +85,14 @@ func UpsertUserHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, "bad request")
 	}*/
 
-	//	res, err := user.New().Upsert(req)
+	//	res, err := model.New().Upsert(req)
 	/*
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, fmt.Sprintf("failed to get user %v", err))
+			return c.JSON(http.StatusInternalServerError, fmt.Sprintf("failed to get model %v", err))
 		}
 
 		if res.IsEmpty() {
-			return c.JSON(http.StatusNotFound, "user not found")
+			return c.JSON(http.StatusNotFound, "model not found")
 		}*/
 
 	return c.JSON(http.StatusAccepted, "accepted")
@@ -125,8 +125,8 @@ func PutUserHandler(c echo.Context) error {
 func DeleteUserHandler(c echo.Context) error {
 	//uuid := c.Param("uuid")
 
-	/*		if err := user.New().Delete(model.DeleteUserInput{Uuid: uuid}); err != nil {
-			return c.JSON(http.StatusInternalServerError, fmt.Sprintf("failed to delete user %v", err))
+	/*		if err := model.New().Delete(model.DeleteUserInput{Uuid: uuid}); err != nil {
+			return c.JSON(http.StatusInternalServerError, fmt.Sprintf("failed to delete model %v", err))
 		}*/
 
 	return c.JSON(http.StatusNoContent, "deleted")
