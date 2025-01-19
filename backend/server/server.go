@@ -128,6 +128,9 @@ func New() (*Server, error) {
 
 	//subscribing
 	subscriberr, err := subscribing.New(logger)
+	if err != nil {
+		return nil, err
+	}
 
 	//biddering
 	bidderConfig, err := utils.LoadConfig("biddering", os.Getenv("env"))

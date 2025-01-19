@@ -13,14 +13,13 @@ import (
 
 func TestAuthService_RegisterSuccess(t *testing.T) {
 	logger := zap.NewNop()
-	mockInMemStore := new(mocks.InMemMock)
-	service := NewAuthService(mockInMemStore, logger)
+	mockInMemStore := mocks.InMemMock{Mock: mock.Mock{}}
+	service := NewAuthService(&mockInMemStore, logger)
 
-	//success mocks
+	//success mock
 	user := "model"
 	password := "password"
 	mockInMemStore.Mock.On("Save", user, mock.Anything).Return(nil)
-
 	err := service.Register(user, password)
 
 	assert.Nil(t, err)
@@ -35,7 +34,6 @@ func TestAuthService_RegisterFail(t *testing.T) {
 	user := "model"
 	password := "password"
 	mockInMemStore.Mock.On("Save", user, mock.Anything).Return(errors.New("invalid password"))
-
 	err := service.Register(user, password)
 
 	assert.Error(t, err)

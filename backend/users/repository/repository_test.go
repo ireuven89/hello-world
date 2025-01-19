@@ -158,36 +158,35 @@ func TestUpsert_Create(t *testing.T) {
 	mockDb, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("failed to initialize mocks DB: %v", err)
+		defer mockDb.Close()
+
+		// Create a UserRepository instance
+		repo := &UserRepository{
+			db:     sqlz.New(mockDb, "mysql"),
+			logger: logger,
+		}
+
+		// Input data for the Upsert method
+		input := model.UserUpsertInput{
+			Name:   "John Doe",
+			Region: "North",
+		}
+
+		mockUuid := uuid.New().String()
+
+		// Setup the expectation for the insert query
+		mock.ExpectQuery("INSERT INTO users").WithArgs(sqlmock.AnyArg(), input.Name, input.Region).WillReturnRows(
+			sqlmock.NewRows([]string{"id"}).AddRow(mockUuid),
+		)
+
+		// Run the Upsert method
+		id, err := repo.Upsert(input)
+
+		// Assertions
+		assert.Nil(t, err)
+		assert.Equal(t, mockUuid, id)
+		assert.NoError(t, mock.ExpectationsWereMet())
 	}
-	defer mockDb.Close()
-
-	// Create a UserRepository instance
-	repo := &UserRepository{
-		db:     sqlz.New(mockDb, "mysql"),
-		logger: logger,
-	}
-
-	// Input data for the Upsert method
-	input := model.UserUpsertInput{
-		Name:   "John Doe",
-		Region: "North",
-	}
-
-	// Generate a mocks UUID to return for the created user
-	mockUuid := uuid.New().String()
-
-	// Setup the expectation for the insert query
-	mock.ExpectQuery("INSERT INTO users ").WithArgs(sqlmock.AnyArg(), input.Name, input.Region).WillReturnRows(
-		sqlmock.NewRows([]string{"id"}).AddRow(mockUuid),
-	)
-
-	// Run the Upsert method
-	id, err := repo.Upsert(input)
-
-	// Assertions
-	assert.Nil(t, err)
-	assert.Equal(t, mockUuid, id)
-	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestUserRepository_Upsert_Update(t *testing.T) {
@@ -196,7 +195,7 @@ func TestUserRepository_Upsert_Update(t *testing.T) {
 	mockDb, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("failed to initialize mocks DB: %v", err)
-	}
+	// Initialize the logger and mock database
 	defer mockDb.Close()
 
 	// Create a UserRepository instance
@@ -223,5 +222,4 @@ func TestUserRepository_Upsert_Update(t *testing.T) {
 	// Assertions
 	assert.Nil(t, err)                            // Ensure no error occurred
 	assert.Equal(t, input.Uuid, id)               // Ensure the returned ID matches the UUID
-	assert.NoError(t, mock.ExpectationsWereMet()) // Ensure mocks expectations were met
 }

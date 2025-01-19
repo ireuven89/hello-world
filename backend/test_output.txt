@@ -1,0 +1,31 @@
+?   	github.com/ireuven89/hello-world/backend/auction/model	[no test files]
+?   	github.com/ireuven89/hello-world/backend/db/migrations/roles	[no test files]
+?   	github.com/ireuven89/hello-world/backend/db/model	[no test files]
+?   	github.com/ireuven89/hello-world/backend/bider/model	[no test files]
+	github.com/ireuven89/hello-world/backend		coverage: 0.0% of statements
+	github.com/ireuven89/hello-world/backend/authentication		ok  	github.com/ireuven89/hello-world/backend/aws	(cached)	coverage: 0.0% of statements in ./...
+ok  	github.com/ireuven89/hello-world/backend/bider	(cached)	coverage: 0.0% of statements in ./...
+ok  	github.com/ireuven89/hello-world/backend/db	(cached)	coverage: 0.0% of statements in ./...
+	github.com/ireuven89/hello-world/backend/db/utils		coverage: 0.0% of statements
+	github.com/ireuven89/hello-world/backend/db/mock		coverage: 0.0% of statements
+ok  	github.com/ireuven89/hello-world/backend/elastic	(cached)	coverage: 0.0% of statements in ./...
+?   	github.com/ireuven89/hello-world/backend/item/model	[no test files]
+?   	github.com/ireuven89/hello-world/backend/routes/model	[no test files]
+	github.com/ireuven89/hello-world/backend/elastic/mock		coverage: 0.0% of statements
+	github.com/ireuven89/hello-world/backend/sns		coverage: 0.0% of statements
+	github.com/ireuven89/hello-world/backend/item/repository		coverage: 0.0% of statements
+	github.com/ireuven89/hello-world/backend/kafka		coverage: 0.0% of statements
+	github.com/ireuven89/hello-world/backend/item		coverage: 0.0% of statements
+	github.com/ireuven89/hello-world/backend/rabbit		coverage: 0.0% of statements
+	github.com/ireuven89/hello-world/backend/environment		coverage: 0.0% of statements
+	github.com/ireuven89/hello-world/backend/server		coverage: 0.0% of statements
+ok  	github.com/ireuven89/hello-world/backend/redis	(cached)	coverage: 0.0% of statements in ./...
+ok  	github.com/ireuven89/hello-world/backend/routes	(cached)	coverage: 2.3% of statements in ./...
+ok  	github.com/ireuven89/hello-world/backend/test	(cached)	coverage: 0.0% of statements in ./...
+	github.com/ireuven89/hello-world/backend/tests/config		coverage: 0.0% of statements
+	github.com/ireuven89/hello-world/backend/tests/utils		coverage: 0.0% of statements
+ok  	github.com/ireuven89/hello-world/backend/tests/integration_tests	(cached)	coverage: 1.9% of statements in ./...
+ok  	github.com/ireuven89/hello-world/backend/tests/integration_tests/aws	(cached)	coverage: 4.2% of statements in ./...
+ok  	github.com/ireuven89/hello-world/backend/user	(cached)	coverage: 0.0% of statements in ./... [no tests to run]
+	github.com/ireuven89/hello-world/backend/user/model		coverage: 0.0% of statements
+	github.com/ireuven89/hello-world/backend/utils		coverage: 0.0% of statements
