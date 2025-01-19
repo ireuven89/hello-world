@@ -2,26 +2,29 @@ package utils
 
 import (
 	"encoding/json"
-	"math"
+	"fmt"
 	"os"
-	"strings"
+	"path/filepath"
 )
 
 type Config struct {
-	TenantEndpoint string               `json:"endpoint"`
-	Databases      []DataBaseConnection `json:"databaseConnections"`
+	TenantEndpoint string                        `json:"endpoint"`
+	Databases      map[string]DataBaseConnection `json:"databaseConnections"`
+	ServicePort    string                        `json:"servicePort"`
 }
 
 type DataBaseConnection struct {
-	Name     string `json:"name"`
 	Host     string `json:"host"`
-	User     string `json:"user"`
+	UserName string `json:"user"`
 	Password string `json:"password"`
 }
 
-func GetConfiguration(dir string) (Config, error) {
+const configPath = "%s/config/%s.json"
+
+func LoadConfig(service, env string) (Config, error) {
 	var config Config
-	file, err := os.Open(dir + "/config.json")
+	dir, err := filepath.Abs(service)
+	file, err := os.Open(fmt.Sprintf(configPath, dir, env))
 
 	if err != nil {
 		return Config{}, err
@@ -32,22 +35,4 @@ func GetConfiguration(dir string) (Config, error) {
 	}
 
 	return config, nil
-}
-
-// Levenshtein - returns the distance between a and b
-func Levinstein(a, b string) float32 {
-	aChars := strings.Split(a, "")
-	bChars := strings.Split(b, "")
-	absDistance := math.Abs(float64(float32(len(bChars) - len(aChars))))
-
-	for index := range aChars {
-		if index >= len(bChars) {
-			break
-		}
-		if aChars[index] != bChars[index] {
-			absDistance++
-		}
-	}
-
-	return float32(absDistance / float64(len(bChars)))
 }

@@ -2,178 +2,120 @@ package bider
 
 import (
 	"errors"
+	"fmt"
 	"testing"
+	"time"
 
-	"github.com/ireuven89/hello-world/backend/bider/model"
+	"github.com/ido50/sqlz"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"go.uber.org/zap"
+	"gopkg.in/DATA-DOG/go-sqlmock.v1"
+
+	"github.com/ireuven89/hello-world/backend/bider/model"
 )
 
-type MockRepo struct {
+type MockRedis struct {
 	mock mock.Mock
 }
 
-func (mdb *MockRepo) List(input model.BiddersInput) ([]Bidder, error) {
-	args := mdb.mock.Called(input)
+func (mdb *MockRedis) Set(key string, value interface{}, ttl time.Duration) error {
+	args := mdb.mock.Called(key, value, ttl)
 
-	return args.Get(0).([]Bidder), args.Error(1)
+	return args.Error(0)
 }
 
-func (mdb *MockRepo) Single(input model.BiddersInput) (Bidder, error) {
-	args := mdb.mock.Called(input)
+func (mdb *MockRedis) Get(key string) (interface{}, error) {
+	args := mdb.mock.Called(key)
 
-	return args.Get(0).(Bidder), args.Error(1)
+	return args.Get(0), args.Error(1)
 }
 
-func (mdb *MockRepo) Upsert(input model.BiddersInput) (string, error) {
-	args := mdb.mock.Called(input)
-
-	return args.Get(0).(string), args.Error(1)
-}
-
-func (mdb *MockRepo) Delete(uuid string) error {
+func (mdb *MockRedis) Delete(uuid string) error {
 	args := mdb.mock.Called(uuid)
 
 	return args.Error(0)
 }
 
-type TestList struct {
-	name     string
-	wantErr  bool
-	input    model.BiddersInput
-	mockCall *mock.Call
-	expected []Bidder
-}
-
 func TestRepository_List(t *testing.T) {
-	repo := MockRepo{mock: mock.Mock{}}
-	successInput := model.BiddersInput{
+	logger := zap.NewNop()
+	redisMock := new(MockRedis)
+	mockDB, mockSql, err := sqlmock.New()
+	assert.NoError(t, err)
+	mockSqlz := sqlz.New(mockDB, "mysql")
+	createAt := time.Now()
+	updateAt := time.Now()
+
+	repo := New(mockSqlz, logger, redisMock)
+	input := model.BiddersInput{
+		Page: model.PageRequest{Offset: 0},
 		Name: "name",
-		Uuid: "uuid",
 		Item: "item",
 	}
-	successExpected := []Bidder{{ID: 0, Name: "name", Uuid: "uuid"}}
-	failedInput := model.BiddersInput{
-		Name: "",
-		Uuid: "",
-		Item: "",
-	}
-	tests := []TestList{{
-		name:     "success",
-		input:    successInput,
-		mockCall: repo.mock.On("List", successInput).Return(successExpected, nil),
-		expected: successExpected,
-	},
+	expectedResult := []model.Bidder{
 		{
-			name:     "fail on empty list",
-			input:    failedInput,
-			mockCall: repo.mock.On("List", failedInput).Return([]Bidder(nil), errors.New("not found")),
-			wantErr:  true,
-			expected: nil,
+			Uuid:      "mock-uuid",
+			Name:      input.Name,
+			Item:      input.Item,
+			CreatedAt: createAt,
+			UpdatedAt: updateAt,
 		},
 	}
 
-	for _, test := range tests {
-		res, err := repo.List(test.input)
-		assert.Equal(t, err != nil, test.wantErr)
-		assert.Equal(t, res, test.expected)
-	}
-}
+	redisQuery := fmt.Sprintf("%s%s%s%v%v", input.Uuid, input.Name, input.Item, input.Page.Offset, input.Page.GetLimit())
+	rows := sqlmock.NewRows([]string{"uuid", "name", "item", "created_at", "updated_at"}).
+		AddRow("mock-uuid", input.Name, input.Item, createAt, updateAt)
+	mockSql.ExpectQuery("SELECT uuid, name, item, created_at, updated_at FROM bidders").
+		WithArgs("name", "item").
+		WillReturnRows(rows)
 
-type TestSingle struct {
-	name     string
-	wantErr  bool
-	input    model.BiddersInput
-	mockCall *mock.Call
-	expected Bidder
+	//redis cache miss and set valid
+	redisMock.mock.On("Get", redisQuery).Return(nil, errors.New("not found"))
+	redisMock.mock.On("Set", redisQuery, expectedResult, redisQueryTtl).Return(nil)
+
+	res, err := repo.List(input)
+
+	redisMock.mock.AssertCalled(t, "Get", redisQuery)
+	redisMock.mock.AssertCalled(t, "Set", redisQuery, expectedResult, redisQueryTtl)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedResult, res)
+	assert.NoError(t, mockSql.ExpectationsWereMet())
+
 }
 
 func TestRepository_Single(t *testing.T) {
-	repo := MockRepo{mock: mock.Mock{}}
-	successInput := model.BiddersInput{
+	logger := zap.NewNop()
+	redisMock := MockRedis{mock: mock.Mock{}}
+	mockDB, mockSql, err := sqlmock.New()
+	assert.NoError(t, err)
+	mockSqlz := sqlz.New(mockDB, "mysql")
+	createAt := time.Now()
+	updateAt := time.Now()
+	repo := New(mockSqlz, logger, &redisMock)
+	mockUuid := "mock-uuid"
+	input := model.BiddersInput{
+		Page: model.PageRequest{Offset: 0},
 		Name: "name",
-		Uuid: "uuid",
 		Item: "item",
 	}
-	successExpected := Bidder{ID: 0, Name: "name", Uuid: "uuid"}
-	tests := []TestSingle{{
-		name:     "success",
-		input:    successInput,
-		mockCall: repo.mock.On("Single", successInput).Return(successExpected, nil),
-		expected: successExpected,
-	},
+	expectedResult := model.Bidder{
+		Uuid:      "mock-uuid",
+		Name:      input.Name,
+		Item:      input.Item,
+		CreatedAt: createAt,
+		UpdatedAt: updateAt,
 	}
+	rows := sqlmock.NewRows([]string{"uuid", "name", "item", "created_at", "updated_at"}).
+		AddRow(mockUuid, "name", "item", createAt, updateAt)
+	mockSql.ExpectQuery("SELECT uuid, name, item, created_at, updated_at FROM bidders").
+		WithArgs(mockUuid).
+		WillReturnRows(rows)
 
-	for _, test := range tests {
-		res, err := repo.Single(test.input)
-		assert.Equal(t, err != nil, test.wantErr)
-		assert.Equal(t, res, test.expected)
-	}
-}
+	res, err := repo.Single(mockUuid)
 
-type TestDelete struct {
-	name     string
-	wantErr  bool
-	input    string
-	mockCall *mock.Call
-}
+	assert.NoError(t, err)
+	assert.Equal(t, expectedResult, res)
+	assert.NoError(t, mockSql.ExpectationsWereMet())
 
-func TestRepository_Delete(t *testing.T) {
-	repo := MockRepo{mock: mock.Mock{}}
-	successInput := "uuid"
-	tests := []TestDelete{
-		{
-			name:     "success",
-			input:    successInput,
-			mockCall: repo.mock.On("Delete", successInput).Return(nil),
-			wantErr:  false,
-		},
-		{
-			name:     "failed not found",
-			input:    "",
-			mockCall: repo.mock.On("Delete", "").Return(errors.New("failed to find bidder")),
-			wantErr:  true,
-		},
-	}
-
-	for _, test := range tests {
-		err := repo.Delete(test.input)
-		assert.Equal(t, err != nil, test.wantErr)
-
-	}
-}
-
-type TestUpsert struct {
-	name     string
-	wantErr  bool
-	input    model.BiddersInput
-	mockCall *mock.Call
-	expected string
-}
-
-func TestRepository_Upsert(t *testing.T) {
-	repo := MockRepo{mock: mock.Mock{}}
-	successInput := model.BiddersInput{Name: "test_name", Uuid: "uuid", Item: "item"}
-	tests := []TestUpsert{
-		{
-			name:     "success",
-			input:    successInput,
-			mockCall: repo.mock.On("Upsert", successInput).Return("mock-uuid", nil),
-			wantErr:  false,
-			expected: "mock-uuid",
-		},
-		{
-			name:     "failed not found",
-			input:    model.BiddersInput{},
-			mockCall: repo.mock.On("Upsert", model.BiddersInput{}).Return("", errors.New("failed to find bidder")),
-			wantErr:  true,
-			expected: "",
-		},
-	}
-
-	for _, test := range tests {
-		res, err := repo.Upsert(test.input)
-		assert.Equal(t, err != nil, test.wantErr)
-		assert.Equal(t, res, test.expected)
-	}
 }

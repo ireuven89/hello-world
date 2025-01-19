@@ -2,12 +2,14 @@ package repository
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/ido50/sqlz"
-	"github.com/ireuven89/hello-world/backend/item/model"
 	"go.uber.org/zap"
+
+	"github.com/ireuven89/hello-world/backend/item/model"
 )
 
 type ItemRepository struct {
@@ -44,7 +46,7 @@ func (r *ItemRepository) ListItems(input model.ListInput) ([]model.Item, error) 
 	}
 
 	q := r.db.
-		Select("id", "uuid", "mame", "link", "userUuid", "category").
+		Select("id", "uuid", "name", "link", "userUuid", "category").
 		From("items")
 
 	if input.Name != "" {
@@ -52,11 +54,11 @@ func (r *ItemRepository) ListItems(input model.ListInput) ([]model.Item, error) 
 	}
 
 	if input.Link != "" {
-		where = append(where, sqlz.Like("name", input.Link))
+		where = append(where, sqlz.Like("link", input.Link))
 	}
 
 	if input.Description != "" {
-		where = append(where, sqlz.Like("name", input.Description))
+		where = append(where, sqlz.Like("description", input.Description))
 	}
 
 	q.Where(where...)
@@ -109,6 +111,7 @@ func (r *ItemRepository) GetItem(uuid string) (model.Item, error) {
 
 func (r *ItemRepository) Upsert(item model.ItemInput) (string, error) {
 	var create bool
+	create = item.Uuid == ""
 
 	if create {
 		id := uuid.New().String()
@@ -119,7 +122,7 @@ func (r *ItemRepository) Upsert(item model.ItemInput) (string, error) {
 				"name":      item.Name,
 				"user_uuid": item.UserUuid,
 				"category":  item.Category,
-			}).Returning("id")
+			})
 
 		err := q.GetRow(&id)
 
@@ -138,8 +141,7 @@ func (r *ItemRepository) Upsert(item model.ItemInput) (string, error) {
 				"name":      item.Name,
 				"category":  item.Category,
 			}).
-			Where(sqlz.Eq("id", item.Uuid)).
-			Returning("id")
+			Where(sqlz.Eq("id", item.Uuid))
 
 		if err := q.GetRow(&id); err != nil {
 			return "", err
@@ -154,7 +156,7 @@ func (r *ItemRepository) Delete(uuid string) error {
 		Where(sqlz.Eq("uuid", uuid))
 
 	if _, err := q.Exec(); err != nil {
-		r.logger.Error("failed deleting form db: ", zap.Any("error", err))
+		r.logger.Error("Delete failed deleting form db: ", zap.Any("error", err))
 		return err
 	}
 

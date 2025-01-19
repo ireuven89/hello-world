@@ -1,10 +1,12 @@
 package elastic
 
 import (
-	"github.com/elastic/go-elasticsearch/v8"
 	"reflect"
 
+	"github.com/elastic/go-elasticsearch/v8"
+
 	"github.com/elastic/go-elasticsearch/v8/esapi"
+
 	"github.com/ireuven89/hello-world/backend/environment"
 
 	"bytes"
@@ -13,10 +15,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/labstack/gommon/log"
-	"go.uber.org/zap"
 	"io"
 	"net/http"
+
+	"github.com/labstack/gommon/log"
+	"go.uber.org/zap"
 )
 
 //go:generate mockgen -source=client.go -destination=mock/client.go
@@ -32,7 +35,6 @@ type Service interface {
 
 type EsService struct {
 	client *elasticsearch.Client
-	api    *esapi.API
 	logger *zap.Logger
 }
 
@@ -93,12 +95,8 @@ func New(logger *zap.Logger) (Service, error) {
 	if res.IsError() {
 		return nil, fmt.Errorf("failed with status code %v", res.StatusCode)
 	}
-
-	api := esapi.New(es.Transport)
-
 	return &EsService{
 		client: es,
-		api:    api,
 		logger: logger,
 	}, nil
 }

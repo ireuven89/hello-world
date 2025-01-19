@@ -5,14 +5,27 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	kithttp "github.com/go-kit/kit/transport/http"
-	"github.com/ireuven89/hello-world/backend/users/model"
-	"github.com/julienschmidt/httprouter"
 	"net/http"
+
+	kithttp "github.com/go-kit/kit/transport/http"
+	"github.com/julienschmidt/httprouter"
+	"github.com/labstack/gommon/log"
+
+	"github.com/ireuven89/hello-world/backend/users/model"
 )
 
 type Router interface {
 	Handle(method, path string, handler http.Handler)
+}
+
+func NewTransport(s Service, router *httprouter.Router) Transport {
+
+	transport := Transport{
+		router: router,
+		s:      s,
+	}
+	RegisterRoutes(router, s) // Register routes during initialization
+	return transport
 }
 
 type Transport struct {
@@ -20,10 +33,11 @@ type Transport struct {
 	s      Service
 }
 
-func NewTransport(router *httprouter.Router, s Service) Transport {
-	return Transport{
-		router: router,
-		s:      s,
+func (t *Transport) ListenAndServe(port string) {
+	log.Printf("Starting server on port %s...", port)
+	err := http.ListenAndServe(":"+port, t.router)
+	if err != nil {
+		log.Fatalf("Server failed to start: %v", err)
 	}
 }
 
@@ -32,6 +46,12 @@ func RegisterRoutes(router *httprouter.Router, s Service) {
 		MakeEndpointGetUser(s),
 		decodeGetUserRequest,
 		encodeGetUserResponse,
+	)
+
+	getUsersHandler := kithttp.NewServer(
+		MakeEndpointGetUsers(s),
+		decodeListUserRequest,
+		encodeListUsersResponse,
 	)
 
 	createUserHandler := kithttp.NewServer(
@@ -53,6 +73,7 @@ func RegisterRoutes(router *httprouter.Router, s Service) {
 	)
 
 	router.Handler(http.MethodGet, "/users/:id", getUserHandler)
+	router.Handler(http.MethodGet, "/users", getUsersHandler)
 	router.Handler(http.MethodPost, "/users", createUserHandler)
 	router.Handler(http.MethodPut, "/users", updateUserHandler)
 	router.Handler(http.MethodDelete, "/users/:id", deleteUserHandler)
@@ -86,6 +107,34 @@ func encodeGetUserResponse(ctx context.Context, writer http.ResponseWriter, resp
 	}
 
 	return nil
+}
+
+type ListUserRequest struct {
+	Name   string `json:"name"`
+	Region string `json:"region"`
+}
+
+type ListUserResponse struct {
+	users []model.UserResponse
+}
+
+func decodeListUserRequest(ctx context.Context, r *http.Request) (request interface{}, err error) {
+	var req ListUserRequest
+
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func encodeListUsersResponse(ctx context.Context, writer http.ResponseWriter, response interface{}) error {
+	res, ok := response.(ListUserResponse)
+	if !ok {
+		return fmt.Errorf("encodeListUsersResponse failed cast response")
+	}
+
+	return json.NewEncoder(writer).Encode(&res)
 }
 
 type CreateUserRequest struct {

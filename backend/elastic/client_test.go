@@ -4,12 +4,15 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/elastic/go-elasticsearch/v8"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 type MockClient struct {
 	mock mock.Mock
+	elasticsearch.Client
 }
 
 func (mc *MockClient) Insert(index string, doc map[string]interface{}) error {
@@ -32,6 +35,12 @@ func (mc *MockClient) Get(index string, docId string) (DocResponse, error) {
 func (mc *MockClient) InsertBulk(index string, doc map[string]interface{}) error {
 	args := mc.mock.Called(index, doc)
 	return args.Error(0)
+}
+
+func (mc *MockClient) BulkSearch(queries []map[string]interface{}, index string) (interface{}, error) {
+	args := mc.mock.Called(queries, index)
+
+	return args.Get(0).(interface{}), args.Error(1)
 }
 
 type testGet struct {

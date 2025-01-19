@@ -2,16 +2,19 @@ package elastic
 
 import (
 	"encoding/json"
-	"go.uber.org/zap/zaptest"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"testing"
 
-	"github.com/ireuven89/hello-world/backend/elastic"
-	"github.com/ireuven89/hello-world/backend/tests/config"
+	"go.uber.org/zap/zaptest"
+
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
+
+	"github.com/ireuven89/hello-world/backend/elastic"
+	"github.com/ireuven89/hello-world/backend/tests/config"
 )
 
 var configJson config.ConfigurationJson
@@ -61,7 +64,7 @@ func init() {
 	es, err := elastic.New(logger)
 
 	if err != nil {
-		panic("failed initialize service")
+		panic(fmt.Sprintf("failed initialize service %v", err))
 	}
 
 	esService = es

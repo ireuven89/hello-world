@@ -13,8 +13,8 @@ type EnvironmentVariables struct {
 	KafkaUser       string `envconfig:"KAFKA_USER" default:""`
 	KafkaPassword   string `envconfig:"KAFKA_PASSWORD" default:""`
 	RabbitQueue     string `envconfig:"RABBIT_QUEUE" default:"my-queue"`
-	RabbitUrl       string `envconfig:"RABBIT_URL" default:"amqp://user:password@localhost:5672/"`
-	RabbitUser      string `envconfig:"KAFKA_PASSWORD" default:"user"`
+	RabbitUrl       string `envconfig:"RABBIT_URL" default:"amqp://model:password@localhost:5672/"`
+	RabbitUser      string `envconfig:"KAFKA_PASSWORD" default:"model"`
 	RabbitPassword  string `envconfig:"RABBIT_USER" default:""`
 	ElasticHost     string `envconfig:"ELASTIC_HOST" default:"http://localhost:9200"`
 	ElasticUsername string `envconfig:"ELASTIC_USER_NAME" default:"none"`
