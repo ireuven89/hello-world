@@ -1,0 +1,21 @@
+{
+  "endpoint": "http://loclhost:8070",
+  "servicePort": "8070",
+  "databaseConnections": {
+    "redis": {
+      "host": "redis_host",
+      "user": "redis_user_name",
+      "password": "redis_password"
+    },
+    "mysql": {
+      "host": "users_mysql_host",
+      "user": "users_mysql_user_name",
+      "password": "users_mysql_password"
+    },
+    "mongo": {
+      "host": "users_mongo_host",
+      "user": "users_mongo_user_name",
+      "password": "users_mongo_password"
+    }
+  }
+}

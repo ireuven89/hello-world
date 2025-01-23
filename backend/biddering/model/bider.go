@@ -1,6 +1,7 @@
 package model
 
 import (
+	"strconv"
 	"time"
 )
 
@@ -23,9 +24,33 @@ type BiddersInput struct {
 	Item string      `json:"item"`
 }
 
+type BidderInput struct {
+	Uuid        string `json:"uuid"`
+	Name        string `json:"name"`
+	Item        string `json:"item"`
+	UserUuid    string `json:"UserUuid"`
+	Price       string `json:"Price"`
+	Description string `json:"Description"`
+}
+
 type PageRequest struct {
 	Offset int64
 	Limit  int64
+}
+
+func SetPage(offset string, limit string) PageRequest {
+	parsedOffset, err := strconv.Atoi(offset)
+
+	parsedLimit, err := strconv.Atoi(limit)
+
+	if err != nil {
+		parsedLimit = 50
+	}
+
+	return PageRequest{
+		Offset: int64(parsedOffset),
+		Limit:  int64(parsedLimit),
+	}
 }
 
 func (p *PageRequest) GetLimit() int64 {

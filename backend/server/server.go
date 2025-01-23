@@ -13,6 +13,7 @@ import (
 	"github.com/ireuven89/hello-world/backend/authenticating"
 	authrepo "github.com/ireuven89/hello-world/backend/authenticating/repository"
 	"github.com/ireuven89/hello-world/backend/aws"
+	"github.com/ireuven89/hello-world/backend/biddering"
 	"github.com/ireuven89/hello-world/backend/db"
 	"github.com/ireuven89/hello-world/backend/elastic"
 	"github.com/ireuven89/hello-world/backend/environment"
@@ -128,9 +129,21 @@ func New() (*Server, error) {
 	//subscribing
 	subscriberr, err := subscribing.New(logger)
 
+	//biddering
+	bidderConfig, err := utils.LoadConfig("biddering", os.Getenv("env"))
 	if err != nil {
 		return nil, err
 	}
+	bidderDb, dir, err := biddering.MustNewDB(bidderConfig.Databases["mysql"])
+	migration := db.New(bidderDb, logger, dir)
+	if err = migration.Run(); err != nil {
+		return nil, err
+	}
+	bidderRepo := biddering.NewRepository(bidderDb, logger, redisClient)
+	bidderService := biddering.NewService(bidderRepo, logger)
+	bidderRoute := httprouter.New()
+	bidderTransport := biddering.NewTransport(bidderService, bidderRoute)
+	go bidderTransport.ListenAndServe(bidderConfig.ServicePort)
 
 	echoServer := echo.New()
 	if err != nil {

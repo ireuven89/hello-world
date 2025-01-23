@@ -1,4 +1,4 @@
-package bider
+package biddering
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 
-	"github.com/ireuven89/hello-world/backend/bider/model"
+	"github.com/ireuven89/hello-world/backend/biddering/model"
 )
 
 type MockRedis struct {
@@ -46,7 +46,7 @@ func TestRepository_List(t *testing.T) {
 	createAt := time.Now()
 	updateAt := time.Now()
 
-	repo := New(mockSqlz, logger, redisMock)
+	repo := NewRepository(mockSqlz, logger, redisMock)
 	input := model.BiddersInput{
 		Page: model.PageRequest{Offset: 0},
 		Name: "name",
@@ -92,7 +92,7 @@ func TestRepository_Single(t *testing.T) {
 	mockSqlz := sqlz.New(mockDB, "mysql")
 	createAt := time.Now()
 	updateAt := time.Now()
-	repo := New(mockSqlz, logger, &redisMock)
+	repo := NewRepository(mockSqlz, logger, &redisMock)
 	mockUuid := "mock-uuid"
 	input := model.BiddersInput{
 		Page: model.PageRequest{Offset: 0},
@@ -112,7 +112,7 @@ func TestRepository_Single(t *testing.T) {
 		WithArgs(mockUuid).
 		WillReturnRows(rows)
 
-	res, err := repo.Single(mockUuid)
+	res, err := repo.FindOne(mockUuid)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedResult, res)

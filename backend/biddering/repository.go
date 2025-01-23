@@ -1,13 +1,14 @@
-package bider
+package biddering
 
 import (
 	"fmt"
 	"time"
 
+	uuid2 "github.com/google/uuid"
 	"github.com/ido50/sqlz"
 	"go.uber.org/zap"
 
-	"github.com/ireuven89/hello-world/backend/bider/model"
+	"github.com/ireuven89/hello-world/backend/biddering/model"
 	dbmodel "github.com/ireuven89/hello-world/backend/db/model"
 	"github.com/ireuven89/hello-world/backend/db/utils"
 )
@@ -33,7 +34,7 @@ type Repository struct {
 	logger *zap.Logger
 }
 
-func New(db *sqlz.DB, logger *zap.Logger, redis Redis) *Repository {
+func NewRepository(db *sqlz.DB, logger *zap.Logger, redis Redis) *Repository {
 
 	return &Repository{
 		db:     db,
@@ -82,7 +83,7 @@ func (r *Repository) List(input model.BiddersInput) ([]model.Bidder, error) {
 	return result, nil
 }
 
-func (r *Repository) Single(uuid string) (model.Bidder, error) {
+func (r *Repository) FindOne(uuid string) (model.Bidder, error) {
 	var result model.Bidder
 
 	q := r.db.Select("uuid", "name", "item", "created_at", "updated_at").From(dbmodel.Bidders).
@@ -98,26 +99,27 @@ func (r *Repository) Single(uuid string) (model.Bidder, error) {
 	return result, nil
 }
 
-func (r *Repository) Upsert(input model.BiddersInput) (string, error) {
+func (r *Repository) Upsert(input model.BidderInput) (string, error) {
 	var create bool
-	var id string
+	var result model.Bidder
 	if input.Uuid != "" {
 		create = true
 	}
 
 	if create {
+		uuid := uuid2.New().String()
 		q := r.db.InsertInto(dbmodel.Bidders).
 			ValueMap(map[string]interface{}{
-				"uuid":       input.Uuid,
+				"uuid":       uuid,
 				"item":       input.Item,
 				"name":       input.Name,
 				"created_at": time.Now(),
 				"updated_at": time.Now(),
-			}).Returning("id")
+			})
 
 		utils.New().DebugInsert(q, "insert bidder")
 
-		if err := q.GetRow(&id); err != nil {
+		if err := q.GetRow(&result); err != nil {
 			r.logger.Error("BidderRepo.Upsert failed creating bidder", zap.Error(err))
 			return "", err
 		}
@@ -130,16 +132,16 @@ func (r *Repository) Upsert(input model.BiddersInput) (string, error) {
 
 		utils.New().DebugUpdate(q, "update bidder")
 
-		if err := q.GetRow(&id); err != nil {
+		if err := q.GetRow(&result); err != nil {
 			r.logger.Error("BidderRepo.Upsert failed updating bidder", zap.Error(err))
 			return "", err
 		}
 	}
 
-	return id, nil
+	return result.Uuid, nil
 }
 
-func setValuesMap(input model.BiddersInput) map[string]interface{} {
+func setValuesMap(input model.BidderInput) map[string]interface{} {
 	var valuesMap map[string]interface{}
 
 	if input.Item != "" {
