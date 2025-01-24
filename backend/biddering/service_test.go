@@ -4,38 +4,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
 
+	"github.com/ireuven89/hello-world/backend/biddering/mocks"
 	"github.com/ireuven89/hello-world/backend/biddering/model"
 )
 
-type MockBidderRepo struct {
-	mock.Mock
-}
-
-func (m *MockBidderRepo) List(input model.BiddersInput) ([]model.Bidder, error) {
-	args := m.Called(input)
-	return args.Get(0).([]model.Bidder), args.Error(1)
-}
-
-func (m *MockBidderRepo) FindOne(uuid string) (model.Bidder, error) {
-	args := m.Called(uuid)
-	return args.Get(0).(model.Bidder), args.Error(1)
-}
-
-func (m *MockBidderRepo) Upsert(input model.BidderInput) (string, error) {
-	args := m.Called(input)
-	return args.String(0), args.Error(1)
-}
-
-func (m *MockBidderRepo) Delete(id string) error {
-	args := m.Called(id)
-	return args.Error(0)
-}
-
 func TestBidderService_ListBidders(t *testing.T) {
-	mockRepo := new(MockBidderRepo)
+	mockRepo := new(mocks.MockBidderRepo)
 	logger := zap.NewNop()
 	service := NewService(mockRepo, logger)
 
@@ -55,7 +31,7 @@ func TestBidderService_ListBidders(t *testing.T) {
 }
 
 func TestBidderService_GetBidder(t *testing.T) {
-	mockRepo := new(MockBidderRepo)
+	mockRepo := new(mocks.MockBidderRepo)
 	logger := zap.NewNop()
 	service := NewService(mockRepo, logger)
 
@@ -72,12 +48,12 @@ func TestBidderService_GetBidder(t *testing.T) {
 }
 
 func TestBidderService_CreateBidder(t *testing.T) {
-	mockRepo := new(MockBidderRepo)
+	mockRepo := new(mocks.MockBidderRepo)
 	logger := zap.NewNop()
 	service := NewService(mockRepo, logger)
 
 	input := model.BidderInput{Name: "New Bidder"}
-	mockUUID := "mock-uuid"
+	mockUUID := "mocks-uuid"
 
 	mockRepo.On("Upsert", input).Return(mockUUID, nil)
 
@@ -89,7 +65,7 @@ func TestBidderService_CreateBidder(t *testing.T) {
 }
 
 func TestBidderService_UpdateBidder(t *testing.T) {
-	mockRepo := new(MockBidderRepo)
+	mockRepo := new(mocks.MockBidderRepo)
 	logger := zap.NewNop()
 	service := NewService(mockRepo, logger)
 
@@ -106,7 +82,7 @@ func TestBidderService_UpdateBidder(t *testing.T) {
 }
 
 func TestBidderService_Delete(t *testing.T) {
-	mockRepo := new(MockBidderRepo)
+	mockRepo := new(mocks.MockBidderRepo)
 	logger := zap.NewNop()
 	service := NewService(mockRepo, logger)
 

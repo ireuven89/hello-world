@@ -230,7 +230,7 @@ func TestUnlockDB(t *testing.T) {
 	}
 }
 
-// mockTransaction is a helper function to create a mock *sql.Tx
+// mockTransaction is a helper function to create a mocks *sql.Tx
 func mockTransaction(db *sql.DB, mock sqlmock.Sqlmock) *sql.Tx {
 	// Start a transaction from the mocked DB
 	mock.ExpectBegin()

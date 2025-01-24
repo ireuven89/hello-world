@@ -6,43 +6,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 
+	"github.com/ireuven89/hello-world/backend/biddering/mocks"
 	"github.com/ireuven89/hello-world/backend/biddering/model"
 )
 
-type MockService struct {
-	mock.Mock
-}
-
-func (m *MockService) ListBidders(input model.BiddersInput) ([]model.Bidder, error) {
-	args := m.Called(input)
-	return args.Get(0).([]model.Bidder), args.Error(1)
-}
-
-func (m *MockService) GetBidder(uuid string) (model.Bidder, error) {
-	args := m.Called(uuid)
-	return args.Get(0).(model.Bidder), args.Error(1)
-}
-
-func (m *MockService) CreateBidder(input model.BidderInput) (string, error) {
-	args := m.Called(input)
-	return args.String(0), args.Error(1)
-}
-
-func (m *MockService) UpdateBidder(input model.BidderInput) (string, error) {
-	args := m.Called(input)
-	return args.String(0), args.Error(1)
-}
-
-func (m *MockService) Delete(id string) error {
-	args := m.Called(id)
-	return args.Error(0)
-}
-
 func TestMakeEndpointListBidders_Success(t *testing.T) {
 	// Arrange
-	mockService := new(MockService)
+	mockService := new(mocks.MockService)
 	input := model.BiddersInput{Item: "item"}
 	expectedBidders := []model.Bidder{
 		{Uuid: "1", Name: "Bidder1"},
@@ -66,7 +37,7 @@ func TestMakeEndpointListBidders_Success(t *testing.T) {
 
 func TestMakeEndpointListBidders_Error(t *testing.T) {
 	// Arrange
-	mockService := new(MockService)
+	mockService := new(mocks.MockService)
 	input := model.BiddersInput{Item: "Invalid"}
 	mockService.On("ListBidders", input).Return([]model.Bidder{}, errors.New("service error"))
 
@@ -84,7 +55,7 @@ func TestMakeEndpointListBidders_Error(t *testing.T) {
 
 func TestMakeEndpointListBidders_InvalidRequest(t *testing.T) {
 	// Arrange
-	mockService := new(MockService)
+	mockService := new(mocks.MockService)
 
 	endpointFunc := MakeEndpointListBidders(mockService)
 
@@ -97,7 +68,7 @@ func TestMakeEndpointListBidders_InvalidRequest(t *testing.T) {
 }
 
 func TestMakeEndpointDeleteBidder(t *testing.T) {
-	mockService := new(MockService)
+	mockService := new(mocks.MockService)
 
 	// Mock behavior
 	validUUID := "12345"
@@ -154,7 +125,7 @@ func TestMakeEndpointDeleteBidder(t *testing.T) {
 }
 
 func TestMakeEndpointGetBidder(t *testing.T) {
-	mockService := new(MockService)
+	mockService := new(mocks.MockService)
 
 	// Mock data
 	validUUID := "12345"
@@ -222,7 +193,7 @@ func TestMakeEndpointGetBidder(t *testing.T) {
 }
 
 func TestMakeEndpointCreateBidder(t *testing.T) {
-	mockService := new(MockService)
+	mockService := new(mocks.MockService)
 
 	// Mock input and output
 	validInput := model.BidderInput{
@@ -298,7 +269,7 @@ func TestMakeEndpointCreateBidder(t *testing.T) {
 }
 
 func TestMakeEndpointUpdateBidder(t *testing.T) {
-	mockService := new(MockService)
+	mockService := new(mocks.MockService)
 
 	// Mock input and behavior
 	validInput := model.BidderInput{

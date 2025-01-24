@@ -8,33 +8,18 @@ import (
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
 
-	"github.com/ireuven89/hello-world/backend/authenticating/model"
+	"github.com/ireuven89/hello-world/backend/authenticating/mocks"
 )
-
-type InMemMock struct {
-	mock mock.Mock
-}
-
-func (ma *InMemMock) Save(username, password string) error {
-	args := ma.mock.Called(username, password)
-
-	return args.Error(0)
-}
-func (ma *InMemMock) Find(username string) (model.User, error) {
-	args := ma.mock.Called(username)
-
-	return args.Get(0).(model.User), args.Error(1)
-}
 
 func TestAuthService_RegisterSuccess(t *testing.T) {
 	logger := zap.NewNop()
-	mockInMemStore := InMemMock{mock: mock.Mock{}}
-	service := NewAuthService(&mockInMemStore, logger)
+	mockInMemStore := new(mocks.InMemMock)
+	service := NewAuthService(mockInMemStore, logger)
 
-	//success mock
+	//success mocks
 	user := "model"
 	password := "password"
-	mockInMemStore.mock.On("Save", user, mock.Anything).Return(nil)
+	mockInMemStore.Mock.On("Save", user, mock.Anything).Return(nil)
 
 	err := service.Register(user, password)
 
@@ -43,13 +28,13 @@ func TestAuthService_RegisterSuccess(t *testing.T) {
 
 func TestAuthService_RegisterFail(t *testing.T) {
 	logger := zap.NewNop()
-	mockInMemStore := InMemMock{mock: mock.Mock{}}
-	service := NewAuthService(&mockInMemStore, logger)
+	mockInMemStore := new(mocks.InMemMock)
+	service := NewAuthService(mockInMemStore, logger)
 
-	//success mock
+	//success mocks
 	user := "model"
 	password := "password"
-	mockInMemStore.mock.On("Save", user, mock.Anything).Return(errors.New("invalid password"))
+	mockInMemStore.Mock.On("Save", user, mock.Anything).Return(errors.New("invalid password"))
 
 	err := service.Register(user, password)
 

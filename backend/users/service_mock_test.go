@@ -88,15 +88,15 @@ func TestService_CreateUser(t *testing.T) {
 		{
 			name: "success",
 			input: model.UserUpsertInput{
-				Uuid: "mock-uuid",
-				Name: "mock-name",
+				Uuid: "mocks-uuid",
+				Name: "mocks-name",
 			},
 			mockCall: mockService.mock.On("CreateUser", model.UserUpsertInput{
-				Uuid: "mock-uuid",
-				Name: "mock-name",
-			}).Return("mock-uuid", nil),
+				Uuid: "mocks-uuid",
+				Name: "mocks-name",
+			}).Return("mocks-uuid", nil),
 			wantErr: false,
-			output:  "mock-uuid",
+			output:  "mocks-uuid",
 		},
 	}
 

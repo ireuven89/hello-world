@@ -153,11 +153,11 @@ func TestUserRepository_ListUsersWithCaching(t *testing.T) {
 }
 
 func TestUpsert_Create(t *testing.T) {
-	// Setup mock database and logger
+	// Setup mocks database and logger
 	logger := zap.NewNop() // No-op logger for testing purposes
 	mockDb, mock, err := sqlmock.New()
 	if err != nil {
-		t.Fatalf("failed to initialize mock DB: %v", err)
+		t.Fatalf("failed to initialize mocks DB: %v", err)
 	}
 	defer mockDb.Close()
 
@@ -173,7 +173,7 @@ func TestUpsert_Create(t *testing.T) {
 		Region: "North",
 	}
 
-	// Generate a mock UUID to return for the created user
+	// Generate a mocks UUID to return for the created user
 	mockUuid := uuid.New().String()
 
 	// Setup the expectation for the insert query
@@ -191,11 +191,11 @@ func TestUpsert_Create(t *testing.T) {
 }
 
 func TestUserRepository_Upsert_Update(t *testing.T) {
-	// Initialize the logger and mock database
+	// Initialize the logger and mocks database
 	logger := zap.NewNop()
 	mockDb, mock, err := sqlmock.New()
 	if err != nil {
-		t.Fatalf("failed to initialize mock DB: %v", err)
+		t.Fatalf("failed to initialize mocks DB: %v", err)
 	}
 	defer mockDb.Close()
 
@@ -223,5 +223,5 @@ func TestUserRepository_Upsert_Update(t *testing.T) {
 	// Assertions
 	assert.Nil(t, err)                            // Ensure no error occurred
 	assert.Equal(t, input.Uuid, id)               // Ensure the returned ID matches the UUID
-	assert.NoError(t, mock.ExpectationsWereMet()) // Ensure mock expectations were met
+	assert.NoError(t, mock.ExpectationsWereMet()) // Ensure mocks expectations were met
 }

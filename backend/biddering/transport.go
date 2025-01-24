@@ -89,9 +89,24 @@ func decodeGetBidderRequest(ctx context.Context, r *http.Request) (request inter
 func encodeGetBidderResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	result := response.(GetBidderResponse)
 
-	//todo format result
+	formattedResult := formatBidder(result.Bidder)
 
-	return json.NewEncoder(w).Encode(result)
+	return json.NewEncoder(w).Encode(formattedResult)
+}
+
+func formatBidder(response model.Bidder) map[string]interface{} {
+
+	return map[string]interface{}{
+		"id":          response.Id,
+		"uuid":        response.Uuid,
+		"userUuid":    response.UserUuid,
+		"name":        response.Name,
+		"item":        response.Item,
+		"price":       response.Price,
+		"description": response.Description,
+		"created_at":  response.CreatedAt,
+		"updated_at":  response.UpdatedAt,
+	}
 }
 
 func decodeListBiddersRequest(ctx context.Context, r *http.Request) (request interface{}, err error) {
@@ -108,11 +123,18 @@ func decodeListBiddersRequest(ctx context.Context, r *http.Request) (request int
 }
 
 func encodeListBiddersResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	result := response.(GetBidderResponse)
+	var formattedResult []map[string]interface{}
+	result, ok := response.(ListBiddersResponseModel)
 
-	//todo format result
+	if !ok {
+		return errors.New("encodeListBiddersResponse failed encoding response")
+	}
 
-	return json.NewEncoder(w).Encode(result)
+	for _, bidder := range result.bidders {
+		formattedResult = append(formattedResult, formatBidder(bidder))
+	}
+
+	return json.NewEncoder(w).Encode(formattedResult)
 }
 
 func decodeCreateBidderRequest(ctx context.Context, r *http.Request) (request interface{}, err error) {
@@ -133,9 +155,11 @@ func encodeCreateBidderResponse(ctx context.Context, w http.ResponseWriter, resp
 		return errors.New("transport.encodeCreateBidderResponse failed encoding response")
 	}
 
-	//todo format result
+	formattedResult := map[string]interface{}{
+		"id": result.ID,
+	}
 
-	return json.NewEncoder(w).Encode(result)
+	return json.NewEncoder(w).Encode(formattedResult)
 }
 
 func decodeUpdateBidderRequest(ctx context.Context, r *http.Request) (request interface{}, err error) {

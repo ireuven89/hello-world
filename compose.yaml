@@ -53,7 +53,6 @@ services:
       test: curl -s http://localhost:9200 >/dev/null || exit 1
       retries: 3
       interval: 30s
-
   auth-service:
     image: auth-service
     build: .
@@ -67,7 +66,6 @@ services:
       - USERS_DB_PASSWORD=${USERS_DB_PASSWORD}
     ports:
       - "8000:8000"
-
   users-db:
     image: mysql:latest
     container_name: users_db
@@ -177,11 +175,11 @@ services:
     volumes:
       - /var/lib/redis
     healthcheck:
-       test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-       interval: 10s
-       timeout: 1m
-       retries: 3
-       start_period: 5s
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 10s
+      timeout: 1m
+      retries: 3
+      start_period: 5s
   kafka:
     image: confluentinc/cp-kafka:7.8.0
     container_name: kafka

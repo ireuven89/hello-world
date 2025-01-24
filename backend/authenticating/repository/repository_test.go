@@ -40,7 +40,7 @@ func TestRepo_Save(t *testing.T) {
 	mock.ExpectExec("INSERT INTO users ").
 		WithArgs(sqlmock.AnyArg(), password, user). // Matching any argument for ID
 		WillReturnResult(
-			sqlmock.NewResult(1, 1), // Return the mock UUID as the inserted id
+			sqlmock.NewResult(1, 1), // Return the mocks UUID as the inserted id
 		)
 
 	err = repo.Save(user, password)

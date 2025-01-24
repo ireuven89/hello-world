@@ -2,12 +2,13 @@ package aws
 
 import (
 	"errors"
+	"os"
+	"testing"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap/zaptest"
-	"os"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -54,8 +55,8 @@ func TestClient_DeleteObject(t *testing.T) {
 			input: struct {
 				key    string
 				bucket string
-			}{key: "mock-key", bucket: "mock-bucket"},
-			mockCall: client.mock.On("DeleteObject", "mock-key", "mock-bucket").Return(nil),
+			}{key: "mocks-key", bucket: "mocks-bucket"},
+			mockCall: client.mock.On("DeleteObject", "mocks-key", "mocks-bucket").Return(nil),
 		},
 		{
 			name:    "fail invalid key",
@@ -63,8 +64,8 @@ func TestClient_DeleteObject(t *testing.T) {
 			input: struct {
 				key    string
 				bucket string
-			}{key: "", bucket: "mock-bucket"},
-			mockCall: client.mock.On("DeleteObject", "", "mock-bucket").Return(errors.New("invalid key for s3")),
+			}{key: "", bucket: "mocks-bucket"},
+			mockCall: client.mock.On("DeleteObject", "", "mocks-bucket").Return(errors.New("invalid key for s3")),
 		},
 		{
 			name:    "fail invalid bucket",
@@ -72,8 +73,8 @@ func TestClient_DeleteObject(t *testing.T) {
 			input: struct {
 				key    string
 				bucket string
-			}{key: "", bucket: "mock-bucket"},
-			mockCall: client.mock.On("DeleteObject", "mock-key", "").Return(errors.New("invalid bucket name")),
+			}{key: "", bucket: "mocks-bucket"},
+			mockCall: client.mock.On("DeleteObject", "mocks-key", "").Return(errors.New("invalid bucket name")),
 		},
 	}
 
@@ -103,8 +104,8 @@ func TestClient_GetObject(t *testing.T) {
 			input: struct {
 				key    string
 				bucket string
-			}{key: "mock-key", bucket: "mock-bucket"},
-			mockCall: client.mock.On("GetObject", "mock-key", "mock-bucket").Return([]byte{'r', 'e', 's'}, nil),
+			}{key: "mocks-key", bucket: "mocks-bucket"},
+			mockCall: client.mock.On("GetObject", "mocks-key", "mocks-bucket").Return([]byte{'r', 'e', 's'}, nil),
 			expected: []byte{'r', 'e', 's'},
 		},
 		{
@@ -113,8 +114,8 @@ func TestClient_GetObject(t *testing.T) {
 			input: struct {
 				key    string
 				bucket string
-			}{key: "", bucket: "mock-bucket"},
-			mockCall: client.mock.On("GetObject", "", "mock-bucket").Return([]byte{}, errors.New("invalid key for s3")),
+			}{key: "", bucket: "mocks-bucket"},
+			mockCall: client.mock.On("GetObject", "", "mocks-bucket").Return([]byte{}, errors.New("invalid key for s3")),
 			expected: []byte{},
 		},
 	}
@@ -148,8 +149,8 @@ func TestClient_PutObject(t *testing.T) {
 				key    string
 				bucket string
 				file   *os.File
-			}{key: "mock-key", bucket: "mock-bucket"},
-			mockCall: client.mock.On("PutObject", "mock-key", "mock-bucket", &os.File{}).Return(nil),
+			}{key: "mocks-key", bucket: "mocks-bucket"},
+			mockCall: client.mock.On("PutObject", "mocks-key", "mocks-bucket", &os.File{}).Return(nil),
 		},
 		{
 			name:    "fail invalid key",
@@ -158,8 +159,8 @@ func TestClient_PutObject(t *testing.T) {
 				key    string
 				bucket string
 				file   *os.File
-			}{key: "", bucket: "mock-bucket"},
-			mockCall: client.mock.On("PutObject", "", "mock-bucket", &os.File{}).Return(errors.New("invalid key for s3")),
+			}{key: "", bucket: "mocks-bucket"},
+			mockCall: client.mock.On("PutObject", "", "mocks-bucket", &os.File{}).Return(errors.New("invalid key for s3")),
 		},
 	}
 
@@ -184,10 +185,10 @@ func (m *MockS3Client) PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput,
 func TestPutObject(t *testing.T) {
 	logger := zaptest.NewLogger(t) // Create a logger for testing
 
-	// Create a mock S3 client
+	// Create a mocks S3 client
 	mockClient := &MockS3Client{
 		PutObjectFunc: func(input *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
-			// Verify input parameters for the mock
+			// Verify input parameters for the mocks
 			assert.Equal(t, aws.String("test-bucket"), input.Bucket)
 			assert.Equal(t, aws.String("test-key"), input.Key)
 			assert.NotNil(t, input.Body)
