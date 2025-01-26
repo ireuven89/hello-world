@@ -3,8 +3,10 @@ package db
 import (
 	"time"
 
-	"github.com/ireuven89/hello-world/backend/db/model"
+	"github.com/ido50/sqlz"
 	"github.com/pressly/goose/v3"
+
+	"github.com/ireuven89/hello-world/backend/db/model"
 
 	"database/sql"
 	"fmt"
@@ -24,12 +26,12 @@ type Service interface {
 }
 
 type MigrationService struct {
-	db            *sql.DB
+	db            *sqlz.DB
 	logger        *zap.Logger
 	migrationsDir string
 }
 
-func New(db *sql.DB, logger *zap.Logger, migrationsDir string) Service {
+func New(db *sqlz.DB, logger *zap.Logger, migrationsDir string) Service {
 
 	return &MigrationService{
 		db:            db,
@@ -112,7 +114,7 @@ func (ms *MigrationService) migrateDB() error {
 
 	start := time.Now()
 	ms.logger.Info("starting migration...")
-	if err := goose.Up(ms.db, ms.migrationsDir); err != nil {
+	if err := goose.Up(ms.db.DB.DB, ms.migrationsDir); err != nil {
 		ms.logger.Error("failed migration")
 		return err
 	}

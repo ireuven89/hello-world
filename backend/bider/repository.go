@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/ido50/sqlz"
+	"go.uber.org/zap"
+
 	"github.com/ireuven89/hello-world/backend/bider/model"
 	dbmodel "github.com/ireuven89/hello-world/backend/db/model"
 	"github.com/ireuven89/hello-world/backend/db/utils"
-	"github.com/ireuven89/hello-world/backend/redis"
-	"go.uber.org/zap"
 )
 
 type Bidder struct {
@@ -20,20 +20,20 @@ type Bidder struct {
 	UpdatedAt time.Time `json:"updatedAt" sql:"updated_at"`
 }
 
-type Repo interface {
-	List(input model.BiddersInput) ([]model.Bidder, error)
-	Single(uuid string) (model.Bidder, error)
-	Upsert(input model.BiddersInput) (string, error)
-	Delete(id string) error
+type Redis interface {
+	Get(key string) (interface{}, error)
+	Set(key string, value interface{}, ttl time.Duration) error
 }
+
+const redisQueryTtl = time.Minute * 3
 
 type Repository struct {
 	db     *sqlz.DB
-	redis  *redis.Service
+	redis  Redis
 	logger *zap.Logger
 }
 
-func New(db *sqlz.DB, logger *zap.Logger, redis *redis.Service) *Repository {
+func New(db *sqlz.DB, logger *zap.Logger, redis Redis) *Repository {
 
 	return &Repository{
 		db:     db,
@@ -46,28 +46,37 @@ func (r *Repository) List(input model.BiddersInput) ([]model.Bidder, error) {
 	var result []model.Bidder
 	var where []sqlz.WhereCondition
 
-	if input.Uuid != "" {
-		where = append(where, sqlz.WhereCondition(sqlz.Eq("uuid", input.Uuid)))
+	cachedQuery := fmt.Sprintf("%s%s%s%v%v", input.Uuid, input.Name, input.Item, input.Page.Offset, input.Page.GetLimit())
+
+	cachedResult, err := r.redis.Get(cachedQuery)
+
+	if err == nil {
+		r.logger.Debug(fmt.Sprintf("List redis hit on input %s", cachedQuery))
+		return cachedResult.([]model.Bidder), nil
 	}
+
 	if input.Name != "" {
-		where = append(where, sqlz.WhereCondition(sqlz.Eq("uuid", input.Uuid)))
+		where = append(where, sqlz.WhereCondition(sqlz.Eq("name", input.Name)))
 	}
 	if input.Item != "" {
-		where = append(where, sqlz.WhereCondition(sqlz.Eq("uuid", input.Uuid)))
+		where = append(where, sqlz.WhereCondition(sqlz.Eq("item", input.Item)))
 	}
-	if input.Uuid != "" {
-		where = append(where, sqlz.WhereCondition(sqlz.Eq("uuid", input.Uuid)))
-	}
+
 	q := r.db.
-		Select("uuid", "name", "created_at", "updated_at").From(dbmodel.Bidders)
+		Select("uuid", "name", "item", "created_at", "updated_at").From(dbmodel.Bidders).
+		Offset(input.Page.Offset, input.Page.GetLimit())
 
 	q.Where(where...)
 
 	utils.New().DebugSelect(q, "select bidders")
 
-	if err := q.GetAll(&result); err != nil {
-		r.logger.Error(fmt.Sprintf("failed to get db %v", err))
+	if err = q.GetAll(&result); err != nil {
+		r.logger.Error(fmt.Sprintf("BidderRepo.List failed to get db %v", err))
 		return nil, err
+	}
+
+	if err = r.redis.Set(cachedQuery, result, redisQueryTtl); err != nil {
+		r.logger.Warn(fmt.Sprintf("failed to set redis q: %s %v", cachedQuery, err))
 	}
 
 	return result, nil
@@ -76,12 +85,13 @@ func (r *Repository) List(input model.BiddersInput) ([]model.Bidder, error) {
 func (r *Repository) Single(uuid string) (model.Bidder, error) {
 	var result model.Bidder
 
-	q := r.db.Select("uuid", "name", "created_at", "updated_at").From(dbmodel.Bidders).
+	q := r.db.Select("uuid", "name", "item", "created_at", "updated_at").From(dbmodel.Bidders).
 		Where(sqlz.WhereCondition(sqlz.Eq("uuid", uuid)))
 
 	utils.New().DebugSelect(q, "single bidder")
 
 	if err := q.GetRow(&result); err != nil {
+		r.logger.Error("BidderRepo.Single failed finding bidder", zap.Error(err))
 		return result, err
 	}
 
@@ -108,6 +118,7 @@ func (r *Repository) Upsert(input model.BiddersInput) (string, error) {
 		utils.New().DebugInsert(q, "insert bidder")
 
 		if err := q.GetRow(&id); err != nil {
+			r.logger.Error("BidderRepo.Upsert failed creating bidder", zap.Error(err))
 			return "", err
 		}
 	} else {
@@ -115,11 +126,12 @@ func (r *Repository) Upsert(input model.BiddersInput) (string, error) {
 		q := r.db.
 			Update(dbmodel.Bidders).
 			SetMap(valuesMap).
-			Where(sqlz.Eq("uuid", input.Uuid)).Returning("id")
+			Where(sqlz.Eq("uuid", input.Uuid))
 
 		utils.New().DebugUpdate(q, "update bidder")
 
 		if err := q.GetRow(&id); err != nil {
+			r.logger.Error("BidderRepo.Upsert failed updating bidder", zap.Error(err))
 			return "", err
 		}
 	}
@@ -147,7 +159,7 @@ func (r *Repository) Delete(uuid string) error {
 		Where(sqlz.Eq("uuid", uuid))
 
 	if _, err := q.Exec(); err != nil {
-		r.logger.Error("failed to delete bidder", zap.String("uuid", uuid))
+		r.logger.Error("BidderRepo.Delete failed deleting bidder", zap.Error(err))
 	}
 
 	return nil

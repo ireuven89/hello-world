@@ -3,9 +3,11 @@ package db
 import (
 	"database/sql"
 	"errors"
+	"testing"
+
+	"github.com/ido50/sqlz"
 	"go.uber.org/zap/zaptest"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -82,7 +84,7 @@ func TestLockDB(t *testing.T) {
 
 	logger := zaptest.NewLogger(t) // Use zaptest for testing zap logging
 	ms := &MigrationService{
-		db:     db,
+		db:     sqlz.New(db, "mysql"),
 		logger: logger,
 	}
 
@@ -158,7 +160,7 @@ func TestUnlockDB(t *testing.T) {
 
 	logger := zaptest.NewLogger(t) // Use zaptest for testing zap logging
 	ms := &MigrationService{
-		db:     db,
+		db:     sqlz.New(db, "mysql"),
 		logger: logger,
 	}
 

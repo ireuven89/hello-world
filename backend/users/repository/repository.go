@@ -2,14 +2,16 @@ package users
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/ido50/sqlz"
+	"go.uber.org/zap"
+
 	dbmodel "github.com/ireuven89/hello-world/backend/db/model"
 	"github.com/ireuven89/hello-world/backend/db/utils"
 	"github.com/ireuven89/hello-world/backend/users/model"
-	"go.uber.org/zap"
 )
 
 type Redis interface {
@@ -134,14 +136,12 @@ func (r *UserRepository) Upsert(input model.UserUpsertInput) (string, error) {
 			"name":   input.Name,
 			"region": input.Region,
 		}).
-			Returning("id",
-				"name",
-				"region")
+			Returning("id")
 
 		utils.New().DebugInsert(q, "insert users")
 
 		if err := q.GetRow(&id); err != nil {
-			r.logger.Error("failed to insert user: ", zap.Error(err))
+			r.logger.Error("failed to insert model: ", zap.Error(err))
 			return id, err
 		}
 	} else {
@@ -158,7 +158,7 @@ func (r *UserRepository) Upsert(input model.UserUpsertInput) (string, error) {
 		utils.New().DebugUpdate(q, "update users")
 
 		if err := q.GetRow(&id); err != nil {
-			r.logger.Error("failed to insert user: ", zap.Error(err))
+			r.logger.Error("failed to insert model: ", zap.Error(err))
 			return id, err
 		}
 	}

@@ -1,5 +1,6 @@
 {
-  "endpoint": "https://dev.internal.com:8000",
+  "endpoint": "https://dev.internal.com:9000",
+  "servicePort": "9000",
   "databaseConnections": [
     {
       "name": "redis",
