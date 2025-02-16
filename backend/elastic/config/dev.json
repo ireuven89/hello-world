@@ -1,0 +1,21 @@
+{
+  "endpoint": "https://dev.internal.com:8000",
+  "servicePort": "8000",
+  "databaseConnections": {
+    "redis": {
+      "host": "REDIS_HOST",
+      "user": "redis_user_name",
+      "password": "redis_password"
+    },
+    "mysql": {
+      "host": "AUTH_DB_HOST",
+      "user": "users_mysql_user_name",
+      "password": "users_mysql_password"
+    },
+    "mongo": {
+      "host": "MONGO_HOST",
+      "user": "users_mongo_user_name",
+      "password": "users_mongo_password"
+    }
+  }
+}

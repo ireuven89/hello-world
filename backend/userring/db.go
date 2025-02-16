@@ -1,0 +1,51 @@
+package userring
+
+import (
+	"database/sql"
+	"fmt"
+	"path/filepath"
+
+	"github.com/go-sql-driver/mysql"
+	"github.com/ido50/sqlz"
+
+	"github.com/ireuven89/hello-world/backend/environment"
+)
+
+// MustNewDB - returns the db connection, the migrations directory of the db, and an error if anything failed
+func MustNewDB() (*sqlz.DB, string, error) {
+	cfg := mysql.Config{
+		User:   environment.Variables.UsersDbUser,
+		Passwd: environment.Variables.UsersDbPassword,
+		Addr:   environment.Variables.UsersDbHost,
+		DBName: "users",
+		Net:    "tcp",
+	}
+	add := cfg.FormatDSN()
+	usersDB, err := sql.Open("mysql", add)
+	if err != nil {
+		fmt.Printf("userring.MustNewDB failed to open db users: %v", err)
+		return nil, "", err
+	}
+
+	//ping check
+	if err = usersDB.Ping(); err != nil {
+		fmt.Printf("userring.MustNewDB failed to dial to db users: %v", err)
+		return nil, "", err
+	}
+
+	//create lock table if not exists
+	if _, err = usersDB.Exec("create table if not exists lock_table(lock_row int)"); err != nil {
+		fmt.Printf("userring.MustNewDB failed to create db users: %v", err)
+
+		return nil, "", err
+	}
+
+	//set migration dir
+	migrationDir, err := filepath.Abs("./db/migrations/users")
+
+	if err != nil {
+		return nil, "", err
+	}
+
+	return sqlz.New(usersDB, "mysql"), migrationDir, nil
+}

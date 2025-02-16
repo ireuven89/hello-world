@@ -1,0 +1,26 @@
+{
+  "endpoint": "https://localhost:9000",
+  "servicePort": "9000",
+  "databaseConnections": {
+    "redis": {
+      "host": "REDIS_HOST",
+      "user": "",
+      "password": ""
+    },
+    "mysql": {
+      "host": "ITEMS_DB_HOST",
+      "user": "ITEMS_DB_USER",
+      "password": "ITEMS_DB_PASSWORD"
+    },
+    "mongo": {
+      "host": "MONGO_HOST",
+      "user": "MONGO_USER",
+      "password": "MONGO_PASSWORD"
+    },
+    "elastic": {
+      "host": "localhost:9200",
+      "user": "users_mongo_user_name",
+      "password": "users_mongo_password"
+    }
+  }
+}

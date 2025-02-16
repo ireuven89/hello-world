@@ -1,0 +1,23 @@
+{
+  "endpoint": "http://localhost:8000",
+  "databaseConnections": [
+    {
+      "name": "REDIS_HOST",
+      "host": "redis_host",
+      "user": "redis_user_name",
+      "password": "redis_password"
+    },
+    {
+      "name": "MYSQL_HOST",
+      "host": "users_mysql_host",
+      "user": "users_mysql_user_name",
+      "password": "users_mysql_password"
+    },
+    {
+      "name": "mongo",
+      "host": "users_mongo_host",
+      "user": "users_mongo_user_name",
+      "password": "users_mongo_password"
+    }
+  ]
+}
