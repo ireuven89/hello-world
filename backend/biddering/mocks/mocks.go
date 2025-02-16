@@ -32,7 +32,7 @@ func (m *MockService) UpdateBidder(input model.BidderInput) (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockService) Delete(id string) error {
+func (m *MockService) DeleteBidder(id string) error {
 	args := m.Called(id)
 	return args.Error(0)
 }

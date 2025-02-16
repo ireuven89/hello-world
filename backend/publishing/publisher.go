@@ -1,7 +1,12 @@
 package publishing
 
 import (
+	"context"
+	"fmt"
+	"time"
+
 	"github.com/brettallred/rabbit"
+	"github.com/sethvargo/go-retry"
 	"github.com/streadway/amqp"
 	"go.uber.org/zap"
 
@@ -31,21 +36,42 @@ type Publisher struct {
 }
 
 func New(logger *zap.Logger) (PService, error) {
-	url := environment.Variables.RabbitUrl
-	conn, err := amqp.Dial(url)
+	var queue amqp.Queue
+	var conn AMQPConnection
+	var channel AMQPChannel
+	retryFunc := retry.NewConstant(time.Second * 2)
+	ret := retry.WithMaxRetries(4, retryFunc)
+
+	err := retry.Do(context.Background(), ret, func(ctx context.Context) error {
+		url := environment.Variables.RabbitUrl
+		conn, err := amqp.Dial(url)
+
+		if err != nil {
+			logger.Error(fmt.Sprintf("failed dialing %v", err))
+			return err
+		}
+
+		channel, err := conn.Channel()
+
+		if err != nil {
+			logger.Error("failed creating channel")
+			return err
+		}
+
+		queue, err = channel.QueueDeclare(environment.Variables.RabbitQueue, false, false, false, false, nil)
+
+		if err != nil {
+			logger.Error("failed queue declare")
+			return err
+		}
+
+		return nil
+	})
 
 	if err != nil {
+		logger.Error("failed connection to rabbit")
 		return nil, err
 	}
-
-	channel, err := conn.Channel()
-
-	if err != nil {
-		return nil, err
-	}
-
-	queue, err := channel.QueueDeclare(environment.Variables.RabbitQueue, false, false, false, false, nil)
-
 	client := &Publisher{
 		conn:    conn,
 		pub:     &rabbit.Publisher{},

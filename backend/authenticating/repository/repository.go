@@ -9,6 +9,7 @@ import (
 
 	"github.com/ireuven89/hello-world/backend/authenticating/model"
 	"github.com/ireuven89/hello-world/backend/db/utils"
+	utils2 "github.com/ireuven89/hello-world/backend/utils"
 )
 
 type Redis interface {
@@ -29,6 +30,7 @@ func New(logger *zap.Logger, db *sqlz.DB) *Repo {
 	}
 }
 
+// retry - Save save to name
 func (r *Repo) Save(username, password string) error {
 	id := uuid.New().String()
 
@@ -67,4 +69,17 @@ func (r *Repo) Find(username string) (model.User, error) {
 		Username: result.Username,
 		Password: result.Password,
 	}, nil
+}
+
+func (r *Repo) DbStatus() utils2.DbStatus {
+	var connected bool
+
+	if err := r.db.Ping(); err != nil {
+		connected = true
+	}
+	return utils2.DbStatus{
+		Name:      r.db.DriverName(),
+		Connected: connected,
+	}
+
 }

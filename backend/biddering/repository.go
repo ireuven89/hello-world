@@ -60,11 +60,11 @@ func (r *Repository) List(input model.BiddersInput) ([]model.Bidder, error) {
 		where = append(where, sqlz.WhereCondition(sqlz.Eq("name", input.Name)))
 	}
 	if input.Item != "" {
-		where = append(where, sqlz.WhereCondition(sqlz.Eq("item", input.Item)))
+		where = append(where, sqlz.WhereCondition(sqlz.Eq("itemming", input.Item)))
 	}
 
 	q := r.db.
-		Select("uuid", "name", "item", "created_at", "updated_at").From(dbmodel.Bidders).
+		Select("uuid", "name", "itemming", "created_at", "updated_at").From(dbmodel.Bidders).
 		Offset(input.Page.Offset, input.Page.GetLimit())
 
 	q.Where(where...)
@@ -76,6 +76,8 @@ func (r *Repository) List(input model.BiddersInput) ([]model.Bidder, error) {
 		return nil, err
 	}
 
+	//cache the result
+
 	if err = r.redis.Set(cachedQuery, result, redisQueryTtl); err != nil {
 		r.logger.Warn(fmt.Sprintf("failed to set redis q: %s %v", cachedQuery, err))
 	}
@@ -86,7 +88,7 @@ func (r *Repository) List(input model.BiddersInput) ([]model.Bidder, error) {
 func (r *Repository) FindOne(uuid string) (model.Bidder, error) {
 	var result model.Bidder
 
-	q := r.db.Select("uuid", "name", "item", "created_at", "updated_at").From(dbmodel.Bidders).
+	q := r.db.Select("uuid", "name", "itemming", "created_at", "updated_at").From(dbmodel.Bidders).
 		Where(sqlz.WhereCondition(sqlz.Eq("uuid", uuid)))
 
 	utils.New().DebugSelect(q, "single bidder")
@@ -111,7 +113,7 @@ func (r *Repository) Upsert(input model.BidderInput) (string, error) {
 		q := r.db.InsertInto(dbmodel.Bidders).
 			ValueMap(map[string]interface{}{
 				"uuid":       uuid,
-				"item":       input.Item,
+				"itemming":   input.Item,
 				"name":       input.Name,
 				"created_at": time.Now(),
 				"updated_at": time.Now(),
@@ -145,7 +147,7 @@ func setValuesMap(input model.BidderInput) map[string]interface{} {
 	var valuesMap map[string]interface{}
 
 	if input.Item != "" {
-		valuesMap["item"] = input.Item
+		valuesMap["itemming"] = input.Item
 	}
 
 	if input.Name != "" {

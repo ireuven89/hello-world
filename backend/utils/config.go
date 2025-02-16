@@ -27,12 +27,15 @@ func LoadConfig(service, env string) (Config, error) {
 	file, err := os.Open(fmt.Sprintf(configPath, dir, env))
 
 	if err != nil {
+		fmt.Sprintf("failed to load config %v", err)
 		return Config{}, err
 	}
 
 	if err = json.NewDecoder(file).Decode(&config); err != nil {
 		return Config{}, err
 	}
+
+	fmt.Sprintf("config file is %v", config)
 
 	return config, nil
 }

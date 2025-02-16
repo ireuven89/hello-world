@@ -3,17 +3,17 @@
   "servicePort": "8000",
   "databaseConnections": {
     "redis": {
-      "host": "redis_host",
+      "host": "REDIS_HOST",
       "user": "redis_user_name",
       "password": "redis_password"
     },
     "mysql": {
-      "host": "users_mysql_host",
+      "host": "AUTH_DB_HOST",
       "user": "users_mysql_user_name",
       "password": "users_mysql_password"
     },
     "mongo": {
-      "host": "users_mongo_host",
+      "host": "MONGO_HOST",
       "user": "users_mongo_user_name",
       "password": "users_mongo_password"
     }

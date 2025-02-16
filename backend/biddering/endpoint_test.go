@@ -14,7 +14,7 @@ import (
 func TestMakeEndpointListBidders_Success(t *testing.T) {
 	// Arrange
 	mockService := new(mocks.MockService)
-	input := model.BiddersInput{Item: "item"}
+	input := model.BiddersInput{Item: "itemming"}
 	expectedBidders := []model.Bidder{
 		{Uuid: "1", Name: "Bidder1"},
 		{Uuid: "2", Name: "Bidder2"},
@@ -131,10 +131,11 @@ func TestMakeEndpointGetBidder(t *testing.T) {
 	validUUID := "12345"
 	invalidUUID := "invalid-id"
 
-	mockBidder := model.Bidder{
-		Uuid: "12345",
-		Name: "Test Bidder",
-	}
+	mockBidder :=
+		model.Bidder{
+			Uuid: "12345",
+			Name: "Test Bidder",
+		}
 
 	// Mock behavior
 	mockService.On("GetBidder", validUUID).Return(mockBidder, nil)
@@ -146,25 +147,27 @@ func TestMakeEndpointGetBidder(t *testing.T) {
 		name      string
 		request   interface{}
 		wantError bool
-		expected  model.Bidder
+		expected  GetBidderResponse
 	}{
 		{
 			name:      "Valid request",
 			request:   GetBidderRequest{uuid: validUUID},
 			wantError: false,
-			expected:  mockBidder,
+			expected: GetBidderResponse{
+				Bidder: mockBidder,
+			},
 		},
 		{
 			name:      "Invalid request - bidder not found",
 			request:   GetBidderRequest{uuid: invalidUUID},
 			wantError: true,
-			expected:  model.Bidder{},
+			expected:  GetBidderResponse{Bidder: model.Bidder{}},
 		},
 		{
 			name:      "Invalid request type",
 			request:   nil, // Invalid request type
 			wantError: true,
-			expected:  model.Bidder{},
+			expected:  GetBidderResponse{},
 		},
 	}
 
@@ -181,7 +184,7 @@ func TestMakeEndpointGetBidder(t *testing.T) {
 			} else {
 				assert.Nil(t, err)
 
-				res, ok := response.(model.Bidder)
+				res, ok := response.(GetBidderResponse)
 				assert.True(t, ok)
 				assert.Equal(t, tt.expected, res)
 			}
@@ -198,7 +201,7 @@ func TestMakeEndpointCreateBidder(t *testing.T) {
 	// Mock input and output
 	validInput := model.BidderInput{
 		Name:  "Test Bidder",
-		Price: "100.0",
+		Price: 100,
 	}
 
 	invalidInput := model.BidderInput{}
@@ -274,7 +277,7 @@ func TestMakeEndpointUpdateBidder(t *testing.T) {
 	// Mock input and behavior
 	validInput := model.BidderInput{
 		Name:  "Updated Bidder",
-		Price: "200.0",
+		Price: 200,
 	}
 
 	invalidInput := model.BidderInput{}

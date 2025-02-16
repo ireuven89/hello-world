@@ -4,7 +4,10 @@ services:
     image: backend
     container_name: backend_server
     ports:
+      - "10000:10000"
       - "7000:7000"
+      - "9000:9000"
+      - "8000:8000"
     environment:
       - DEBUG=${DEBUG}
       - USERS_DB_USER=root
@@ -14,12 +17,16 @@ services:
       - ITEMS_DB_HOST=${ITEMS_DB_HOST}
       - ITEMS_DB_USER=root
       - ELASTIC_HOST=${ELASTIC_HOST}
-      - ELASTIC_USER_NAME=${ELASTIC_USER_NAME}
+      - ELASTIC_USER=${ELASTIC_USER}
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - RABBIT_URL=${RABBIT_URL}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_USER=${REDIS_USER}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - AUTH_DB_HOST=${AUTH_DB_HOST}
+      - AUTH_DB_USER=root
+      - AUTH_DB_PASSWORD=${AUTH_DB_PASSWORD}
+      - ENV=${ENV}
     depends_on:
       elastic:
         condition: service_healthy
@@ -27,10 +34,12 @@ services:
         condition: service_healthy
       users-db:
         condition: service_healthy
+      auth-db:
+        condition: service_healthy
       rabbit:
         condition: service_healthy
-      mongo:
-        condition: service_healthy
+#      mongo:
+#        condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
@@ -53,6 +62,27 @@ services:
       test: curl -s http://localhost:9200 >/dev/null || exit 1
       retries: 3
       interval: 30s
+  graph-db:
+    image: neo4j:latest
+    container_name: grap_db
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/password
+    volumes:
+      - $HOME/neo4j/data:/data
+  dynamo-db:
+    image: amazon/dynamodb-local:latest
+    container_name: dynamo
+    ports:
+      - "5000:5000"
+    environment:
+      - DYNAMO_USER=${DYNAMO_USER}
+      - DYNAMO_PASSWORD=${DYNAMO_PASSWORD}
+    volumes:
+      - /var/lib/dynamo
+
   auth-service:
     image: auth-service
     build: .
@@ -73,7 +103,7 @@ services:
       - "3308:3306"
     environment:
       - MYSQL_ROOT_PASSWORD=${USERS_DB_ROOT_PASSWORD}
-      - MYSQL_DATABASE=users
+      - MYSQL_DATABASE=userring
     healthcheck:
       test: mysqladmin ping -h 127.0.0.1 -u root --password=${MYSQL_ROOT_PASSWORD}
       start_period: 10s
@@ -85,7 +115,7 @@ services:
     image: mysql:latest
     container_name: auth_db
     ports:
-      - "3010:3306"
+      - "3310:3306"
     environment:
       - MYSQL_ROOT_PASSWORD=${USERS_DB_ROOT_PASSWORD}
       - MYSQL_DATABASE=auth
@@ -111,14 +141,14 @@ services:
       retries: 3
     volumes:
       - /var/lib/mysql
-  client-db:
+  bidders-db:
     image: mysql:latest
-    container_name: clients_db
+    container_name: bidders_db
     ports:
-      - "3310:3306"
+      - "3311:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=${CLIENTS_DB_ROOT_PASSWORD}
-      - MYSQL_DATABASE=clients
+      - MYSQL_ROOT_PASSWORD=${BIDDERS_DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=bidders
     healthcheck:
       test: mysqladmin ping -h 127.0.0.1 -u root --password=${MYSQL_ROOT_PASSWORD}
       start_period: 10s

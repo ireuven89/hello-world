@@ -10,17 +10,20 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/ireuven89/hello-world/backend/authenticating/model"
+	"github.com/ireuven89/hello-world/backend/utils"
 )
 
 type Service interface {
 	Register(username, password string) error
 	Login(username, password string) (string, error)
 	VerifyToken(tokenString string) (string, error)
+	Health() utils.ServiceHealthCheck
 }
 
 type AuthRepo interface {
 	Save(username, password string) error
 	Find(username string) (model.User, error)
+	DbStatus() utils.DbStatus
 }
 
 // AuthService is the core authenticating service
@@ -30,6 +33,7 @@ type AuthService struct {
 }
 
 var jwtSecretKey = []byte("your_secret_key")
+var MaxRetryTimes = 3
 
 // NewAuthService creates a new AuthService
 func NewAuthService(userStore AuthRepo, logger *zap.Logger) *AuthService {
@@ -48,6 +52,7 @@ func (service *AuthService) Register(username, password string) error {
 
 // Login authenticates a model and returns a JWT token
 func (service *AuthService) Login(username, password string) (string, error) {
+
 	user, err := service.userStore.Find(username)
 	if err != nil {
 		service.logger.Error("failed to login with error", zap.Error(err))
@@ -55,14 +60,14 @@ func (service *AuthService) Login(username, password string) (string, error) {
 	}
 
 	// Verify password
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return "", errors.New("invalid credentials")
 	}
 
 	// Generate JWT token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"username": username,
-		"exp":      time.Now().Add(24 * time.Hour).Unix(), // Token expires in 24 hours
+		"exp":      time.Now().Add(12 * time.Hour).Unix(), // Token expires in 24 hours
 	})
 
 	return token.SignedString(jwtSecretKey)
@@ -92,4 +97,14 @@ func (service *AuthService) VerifyToken(tokenString string) (string, error) {
 	}
 
 	return username, nil
+}
+
+func (service *AuthService) Health() utils.ServiceHealthCheck {
+	var healthCheck utils.ServiceHealthCheck
+
+	healthCheck.ServiceStatus = "UP"
+	dbStats := service.userStore.DbStatus()
+	healthCheck.DBStatus = append(healthCheck.DBStatus, dbStats)
+
+	return healthCheck
 }

@@ -10,8 +10,8 @@ type Bidder struct {
 	Uuid        string    `json:"uuid" db:"uuid"`
 	UserUuid    string    `json:"UserUuid" db:"user_uuid"`
 	Name        string    `json:"Name" db:"name"`
-	Item        string    `json:"Item" db:"item"`
-	Price       string    `json:"Price" db:"price"`
+	Item        string    `json:"Item" db:"itemming"`
+	Price       int64     `json:"Price" db:"price"`
 	Description string    `json:"Description" db:"description"`
 	CreatedAt   time.Time `json:"Created_At" db:"created_at"`
 	UpdatedAt   time.Time `json:"UpdatedAt" db:"updated_at"`
@@ -21,15 +21,15 @@ type BiddersInput struct {
 	Page PageRequest `json:"defaultRequest"`
 	Uuid string      `json:"uuid"`
 	Name string      `json:"name"`
-	Item string      `json:"item"`
+	Item string      `json:"itemming"`
 }
 
 type BidderInput struct {
 	Uuid        string `json:"uuid"`
 	Name        string `json:"name"`
-	Item        string `json:"item"`
+	Item        string `json:"itemming"`
 	UserUuid    string `json:"UserUuid"`
-	Price       string `json:"Price"`
+	Price       int64  `json:"Price"`
 	Description string `json:"Description"`
 }
 

@@ -3,19 +3,19 @@
   "servicePort": "8070",
   "databaseConnections": {
     "redis": {
-      "host": "redis_host",
-      "user": "redis_user_name",
-      "password": "redis_password"
+      "host": "REDIS_HOST",
+      "user": "",
+      "password": ""
     },
     "mysql": {
-      "host": "users_mysql_host",
-      "user": "users_mysql_user_name",
-      "password": "users_mysql_password"
+      "host": "BIDDERS_DB_HOST",
+      "user": "BIDDERS_DB_USER",
+      "password": "BIDDERS_DB_PASSWORD"
     },
     "mongo": {
-      "host": "users_mongo_host",
-      "user": "users_mongo_user_name",
-      "password": "users_mongo_password"
+      "host": "MONGO_HOST",
+      "user": "MONGO_USER",
+      "password": "MONGO_PASSWORD"
     }
   }
 }

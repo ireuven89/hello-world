@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ireuven89/hello-world/backend/environment"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
+
+	"github.com/ireuven89/hello-world/backend/environment"
 )
 
 type Redis interface {
@@ -22,7 +23,7 @@ type Service struct {
 
 var ctx = context.Background()
 
-func New(logger *zap.Logger) (*Service, error) {
+func New(logger *zap.Logger) (Redis, error) {
 	host := environment.Variables.RedisHost
 	client := redis.NewClient(&redis.Options{
 		Addr: host,
@@ -56,7 +57,7 @@ func (s *Service) Get(key string) (interface{}, error) {
 	result, err := s.client.Get(ctx, key).Result()
 
 	if err != nil {
-		s.logger.Error("failed to get value from redis")
+		s.logger.Warn("failed to get value from redis")
 		return nil, err
 	}
 

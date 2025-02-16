@@ -15,6 +15,7 @@ import (
 
 	"github.com/ireuven89/hello-world/backend/elastic"
 	"github.com/ireuven89/hello-world/backend/tests/config"
+	"github.com/ireuven89/hello-world/backend/utils"
 )
 
 var configJson config.ConfigurationJson
@@ -61,7 +62,11 @@ func init() {
 	t := testing.T{}
 	logger := zaptest.NewLogger(&t)
 
-	es, err := elastic.New(logger)
+	config, err := utils.LoadConfig("elastic", "ENV")
+	if err != nil {
+		t.Error(err)
+	}
+	es, err := elastic.New(logger, config)
 
 	if err != nil {
 		panic(fmt.Sprintf("failed initialize service %v", err))
@@ -95,7 +100,21 @@ func TestInsert(t *testing.T) {
 }
 
 func TestElasticSearchByIndex(t *testing.T) {
-	res, err := esService.Search(ctx, indexName)
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"wildcard": map[string]interface{}{
+				"name.keyword": map[string]interface{}{
+					"value":            "j*",
+					"case_insensitive": false,
+				},
+			},
+		},
+	}
+
+	// Convert query to JSON
+	queryBody, err := json.Marshal(query)
+	assert.Nil(t, err)
+	res, err := esService.Search(ctx, indexName, string(queryBody))
 
 	assert.Nil(t, err, "failed search")
 	assert.NotEmpty(t, res, "failed search")

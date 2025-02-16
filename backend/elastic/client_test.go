@@ -20,8 +20,8 @@ func (mc *MockClient) Insert(index string, doc map[string]interface{}) error {
 	return args.Error(0)
 }
 
-func (mc *MockClient) Search(index string, filters []string) (map[string]interface{}, error) {
-	args := mc.mock.Called(index, filters)
+func (mc *MockClient) Search(index string, query string) (map[string]interface{}, error) {
+	args := mc.mock.Called(index, query)
 
 	return args.Get(0).(map[string]interface{}), args.Error(1)
 }
@@ -138,8 +138,8 @@ type testSearch struct {
 	name    string
 	wantErr bool
 	input   struct {
-		index   string
-		filters []string
+		index string
+		query string
 	}
 	mockCall *mock.Call
 	expected map[string]interface{}
@@ -152,9 +152,9 @@ func TestSearch(t *testing.T) {
 			name:    "fail on search",
 			wantErr: true,
 			input: struct {
-				index   string
-				filters []string
-			}{index: "", filters: []string{""}},
+				index string
+				query string
+			}{index: "", query: ""},
 			expected: map[string]interface{}{},
 			mockCall: client.mock.On("Search", "", []string{""}).Return(map[string]interface{}{}, errors.New("not found")),
 		},
@@ -162,16 +162,16 @@ func TestSearch(t *testing.T) {
 			name:    "success",
 			wantErr: false,
 			input: struct {
-				index   string
-				filters []string
-			}{index: "mocks-index", filters: []string{""}},
+				index string
+				query string
+			}{index: "mocks-index", query: ""},
 			expected: map[string]interface{}{"result": DocResponse{Index: "mocks-index", Id: "mocks-id", Source: map[string]interface{}{"name": "test-doc"}}},
 			mockCall: client.mock.On("Search", "mocks-index", []string{""}).Return(map[string]interface{}{"result": DocResponse{Index: "mocks-index", Id: "mocks-id", Source: map[string]interface{}{"name": "test-doc"}}}, nil),
 		},
 	}
 
 	for _, test := range tests {
-		res, err := client.Search(test.input.index, test.input.filters)
+		res, err := client.Search(test.input.index, test.input.query)
 		assert.Equal(t, err != nil, test.wantErr, test.name)
 		assert.Equal(t, res, test.expected, test.name)
 	}

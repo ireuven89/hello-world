@@ -17,11 +17,18 @@ type RegisterResponse struct {
 	Password string `json:"password"`
 }
 
+func MakeEndpointHealth(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+
+		return s.Health(), nil
+	}
+}
+
 func MakeEndpointRegister(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req, ok := request.(RegisterRequest)
 		if !ok {
-			return nil, fmt.Errorf("MakeEndpointGetUser failed cast request")
+			return nil, fmt.Errorf("MakeEndpointRegister failed cast request")
 		}
 
 		err = s.Register(req.UserName, req.Password)
@@ -46,12 +53,12 @@ func MakeEndpointLogin(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req, ok := request.(LoginRequestModel)
 		if !ok {
-			return nil, fmt.Errorf("MakeEndpointGetUser failed cast request")
+			return nil, fmt.Errorf("MakeEndpointLogin failed cast request")
 		}
 
 		token, err := s.Login(req.UserName, req.Password)
 		if err != nil {
-			return nil, fmt.Errorf("MakeEndpointGetUser: %v", err)
+			return nil, fmt.Errorf("MakeEndpointLogin: %v", err)
 		}
 
 		return LoginResponseModel{
@@ -72,12 +79,12 @@ func MakeEndpointVerify(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req, ok := request.(VerifyRequestModel)
 		if !ok {
-			return nil, fmt.Errorf("MakeEndpointGetUser failed cast request")
+			return nil, fmt.Errorf("MakeEndpointVerify failed cast request")
 		}
 
 		user, err := s.VerifyToken(req.JwtToken)
 		if err != nil {
-			return nil, fmt.Errorf("MakeEndpointGetUser: %v", err)
+			return nil, fmt.Errorf("MakeEndpointVerify: %v", err)
 		}
 
 		return VerifyResponseModel{

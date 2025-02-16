@@ -17,27 +17,27 @@ import (
 	"github.com/ireuven89/hello-world/backend/db"
 	"github.com/ireuven89/hello-world/backend/elastic"
 	"github.com/ireuven89/hello-world/backend/environment"
-	"github.com/ireuven89/hello-world/backend/item"
-	itemrepo "github.com/ireuven89/hello-world/backend/item/repository"
+	"github.com/ireuven89/hello-world/backend/itemming"
+	itemrepo "github.com/ireuven89/hello-world/backend/itemming/repository"
 	"github.com/ireuven89/hello-world/backend/publishing"
 	"github.com/ireuven89/hello-world/backend/redis"
 	"github.com/ireuven89/hello-world/backend/routes"
 	"github.com/ireuven89/hello-world/backend/subscribing"
-	"github.com/ireuven89/hello-world/backend/users"
-	userrepo "github.com/ireuven89/hello-world/backend/users/repository"
+	"github.com/ireuven89/hello-world/backend/userring"
+	userrepo "github.com/ireuven89/hello-world/backend/userring/repository"
 	"github.com/ireuven89/hello-world/backend/utils"
 )
 
 type Server struct {
-	UserService users.Service
-	ItemService item.Service
+	UserService userring.Service
+	ItemService itemming.Service
 	Logger      *zap.Logger
 	Echo        *echo.Echo
 	Elastic     elastic.Service
 	AWSClient   aws.Service
 	Pub         publishing.PService
 	Sub         subscribing.SService
-	Redis       *redis.Service
+	Redis       redis.Redis
 	Auth        authenticating.Service
 }
 
@@ -48,11 +48,20 @@ func New() (*Server, error) {
 	loggerConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	logger, err := loggerConfig.Build()
 
-	config, err := utils.LoadConfig("authenticating", os.Getenv("env"))
+	config, err := utils.LoadConfig("authenticating", os.Getenv("ENV"))
+
+	if err != nil {
+		logger.Error("failed loading config")
+		return nil, err
+	}
 
 	//base services
 	redisClient, err := redis.New(logger)
-	es, err := elastic.New(logger)
+	if err != nil {
+		return nil, err
+	}
+	config, err = utils.LoadConfig("elastic", os.Getenv("ENV"))
+	es, err := elastic.New(logger, config.Databases["elastic"])
 	if err != nil {
 		return nil, err
 	}
@@ -62,6 +71,7 @@ func New() (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	//authenticating
 	authDB, dir, err := authenticating.MustNewDB(config.Databases["mysql"])
 	if err != nil {
@@ -80,12 +90,12 @@ func New() (*Server, error) {
 	go authTransport.ListenAndServe(config.ServicePort)
 
 	//itemming
-	itemConfig, err := utils.LoadConfig("item", os.Getenv("env"))
+	itemConfig, err := utils.LoadConfig("itemming", os.Getenv("ENV"))
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to initiate db %v", err))
 		return nil, err
 	}
-	itemsDB, itemsMigrationDir, err := item.MustNewDB()
+	itemsDB, itemsMigrationDir, err := itemming.MustNewDB()
 
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to initiate db %v", err))
@@ -96,15 +106,15 @@ func New() (*Server, error) {
 		return nil, err
 	}
 	itemRepo := itemrepo.New(itemsDB, logger, redisClient)
-	itemService := item.New(itemRepo, logger)
+	itemService := itemming.New(itemRepo, logger)
 	itemRouter := httprouter.New()
-	itemTransport := item.NewTransport(itemService, itemRouter)
+	itemTransport := itemming.NewTransport(itemService, itemRouter)
 	go itemTransport.ListenAndServe(itemConfig.ServicePort)
 
 	//userring
-	usersDB, userMigrationDir, err := users.MustNewDB()
+	usersDB, userMigrationDir, err := userring.MustNewDB()
 	if err != nil {
-		logger.Error(fmt.Sprintf("failed to initiate users DB %v", err))
+		logger.Error(fmt.Sprintf("failed to initiate userring DB %v", err))
 		panic(err)
 	}
 
@@ -114,9 +124,9 @@ func New() (*Server, error) {
 	}
 
 	userRepo := userrepo.New(usersDB, redisClient, logger)
-	usersService := users.New(logger, userRepo)
+	usersService := userring.New(logger, userRepo)
 	userRouter := httprouter.New()
-	transport := users.NewTransport(usersService, userRouter)
+	transport := userring.NewTransport(usersService, userRouter)
 	go transport.ListenAndServe("7000")
 
 	//publishing
@@ -133,11 +143,14 @@ func New() (*Server, error) {
 	}
 
 	//biddering
-	bidderConfig, err := utils.LoadConfig("biddering", os.Getenv("env"))
+	bidderConfig, err := utils.LoadConfig("biddering", os.Getenv("ENV"))
 	if err != nil {
 		return nil, err
 	}
 	bidderDb, dir, err := biddering.MustNewDB(bidderConfig.Databases["mysql"])
+	if err != nil {
+		return nil, err
+	}
 	migration := db.New(bidderDb, logger, dir)
 	if err = migration.Run(); err != nil {
 		return nil, err
@@ -148,6 +161,9 @@ func New() (*Server, error) {
 	bidderTransport := biddering.NewTransport(bidderService, bidderRoute)
 	go bidderTransport.ListenAndServe(bidderConfig.ServicePort)
 
+	//recovering
+
+	//remoting
 	echoServer := echo.New()
 	if err != nil {
 		return nil, err

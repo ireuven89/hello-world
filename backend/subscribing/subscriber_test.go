@@ -1,41 +1,23 @@
 package subscribing
 
 import (
+	"testing"
+	"time"
+
 	"github.com/streadway/amqp"
-	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
+
+	"github.com/ireuven89/hello-world/backend/subscribing/mocks"
 )
 
-type MockAMQPChannel struct {
-	mock.Mock
-}
-
-func (m *MockAMQPChannel) Consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error) {
-	args2 := m.Called(queue, consumer, autoAck, exclusive, noLocal, noWait, args)
-	return args2.Get(0).(chan amqp.Delivery), args2.Error(1)
-}
-
-func (m *MockAMQPChannel) QueueDeclare(name string, durable, autoDelete, exclusive, noWait bool, args amqp.Table) (amqp.Queue, error) {
-	args2 := m.Called(name, durable, autoDelete, exclusive, noWait, args)
-	return args2.Get(0).(amqp.Queue), args2.Error(1)
-}
-
-type MockAMQPConnection struct {
-	mock.Mock
-}
-
-func (m *MockAMQPConnection) Channel() (*amqp.Channel, error) {
-	args := m.Called()
-	return args.Get(0).(*amqp.Channel), args.Error(1)
-}
-
-/*
 func TestSubscribe(t *testing.T) {
 	// Mock the logger
 	logger := zap.NewNop() // No-op logger for testing purposes
 
 	// Mock the RabbitMQ connection and channel
-	mockConn := new(MockAMQPConnection)
-	mockCh := new(MockAMQPChannel)
+	mockConn := new(mocks.MockAMQPConnection)
+	mockCh := new(mocks.MockAMQPChannel)
 
 	// Set up expectations for QueueDeclare
 	mockConn.On("Channel").Return(mockCh, nil)
@@ -99,8 +81,8 @@ func TestSubscribeFailure(t *testing.T) {
 	logger := zap.NewNop()
 
 	// Mock the RabbitMQ connection and channel
-	mockConn := new(MockAMQPConnection)
-	mockCh := new(MockAMQPChannel)
+	mockConn := new(mocks.MockAMQPConnection)
+	mockCh := new(mocks.MockAMQPChannel)
 
 	deliveries := make(chan amqp.Delivery)
 	// Set up expectations for QueueDeclare
@@ -127,4 +109,4 @@ func TestSubscribeFailure(t *testing.T) {
 	// Assertions
 	assert.Error(t, err)
 	mockCh.AssertExpectations(t) // Check if the Consume method was called
-}*/
+}

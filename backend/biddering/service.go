@@ -11,7 +11,7 @@ type Service interface {
 	GetBidder(uuid string) (model.Bidder, error)
 	CreateBidder(input model.BidderInput) (string, error)
 	UpdateBidder(input model.BidderInput) (string, error)
-	Delete(id string) error
+	DeleteBidder(id string) error
 }
 
 type BidderRepo interface {
@@ -75,7 +75,8 @@ func (s *BidderService) UpdateBidder(input model.BidderInput) (string, error) {
 	}
 	return result, nil
 }
-func (s *BidderService) Delete(id string) error {
+
+func (s *BidderService) DeleteBidder(id string) error {
 	err := s.repo.Delete(id)
 
 	if err != nil {

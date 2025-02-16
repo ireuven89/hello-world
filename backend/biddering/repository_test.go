@@ -9,6 +9,7 @@ import (
 	"github.com/ido50/sqlz"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 
 	"github.com/ireuven89/hello-world/backend/biddering/mocks"
@@ -28,7 +29,7 @@ func TestRepository_List(t *testing.T) {
 	input := model.BiddersInput{
 		Page: model.PageRequest{Offset: 0},
 		Name: "name",
-		Item: "item",
+		Item: "itemming",
 	}
 	expectedResult := []model.Bidder{
 		{
@@ -41,10 +42,10 @@ func TestRepository_List(t *testing.T) {
 	}
 
 	redisQuery := fmt.Sprintf("%s%s%s%v%v", input.Uuid, input.Name, input.Item, input.Page.Offset, input.Page.GetLimit())
-	rows := sqlmock.NewRows([]string{"uuid", "name", "item", "created_at", "updated_at"}).
+	rows := sqlmock.NewRows([]string{"uuid", "name", "itemming", "created_at", "updated_at"}).
 		AddRow("mocks-uuid", input.Name, input.Item, createAt, updateAt)
-	mockSql.ExpectQuery("SELECT uuid, name, item, created_at, updated_at FROM bidders").
-		WithArgs("name", "item").
+	mockSql.ExpectQuery("SELECT uuid, name, itemming, created_at, updated_at FROM bidders").
+		WithArgs("name", "itemming").
 		WillReturnRows(rows)
 
 	//redis cache miss and set valid
@@ -63,7 +64,7 @@ func TestRepository_List(t *testing.T) {
 }
 
 func TestRepository_Single(t *testing.T) {
-	logger := zap.NewNop()
+	logger := zaptest.NewLogger(t)
 	redisMock := new(mocks.MockRedis)
 	mockDB, mockSql, err := sqlmock.New()
 	assert.NoError(t, err)
@@ -75,7 +76,7 @@ func TestRepository_Single(t *testing.T) {
 	input := model.BiddersInput{
 		Page: model.PageRequest{Offset: 0},
 		Name: "name",
-		Item: "item",
+		Item: "itemming",
 	}
 	expectedResult := model.Bidder{
 		Uuid:      "mocks-uuid",
@@ -84,9 +85,9 @@ func TestRepository_Single(t *testing.T) {
 		CreatedAt: createAt,
 		UpdatedAt: updateAt,
 	}
-	rows := sqlmock.NewRows([]string{"uuid", "name", "item", "created_at", "updated_at"}).
-		AddRow(mockUuid, "name", "item", createAt, updateAt)
-	mockSql.ExpectQuery("SELECT uuid, name, item, created_at, updated_at FROM bidders").
+	rows := sqlmock.NewRows([]string{"uuid", "name", "itemming", "created_at", "updated_at"}).
+		AddRow(mockUuid, "name", "itemming", createAt, updateAt)
+	mockSql.ExpectQuery("SELECT uuid, name, itemming, created_at, updated_at FROM bidders").
 		WithArgs(mockUuid).
 		WillReturnRows(rows)
 

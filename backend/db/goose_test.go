@@ -6,73 +6,10 @@ import (
 	"testing"
 
 	"github.com/ido50/sqlz"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap/zaptest"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
-
-type MockGooseService struct {
-	mock mock.Mock
-}
-
-func (mg *MockGooseService) lockDB() (*sql.Tx, error) {
-	args := mg.mock.Called()
-
-	res, ok := args.Get(0).(*sql.Tx)
-
-	if !ok {
-		return nil, args.Error(1)
-	}
-
-	return res, args.Error(1)
-}
-
-func (mg *MockGooseService) unlockDB(transaction *sql.Tx) error {
-	args := mg.mock.Called(transaction)
-
-	return args.Error(0)
-}
-
-func (mg *MockGooseService) migrateDB() error {
-	args := mg.mock.Called()
-
-	return args.Error(0)
-}
-
-func TestLockingDB(t *testing.T) {
-	mgs := MockGooseService{mock: mock.Mock{}}
-
-	mgs.mock.On("lockDB").Return(nil, errors.New("failed locking db"))
-
-	tx, err := mgs.lockDB()
-
-	assert.NotNil(t, err)
-	assert.Nil(t, tx)
-
-}
-
-func TestUnlockingDB(t *testing.T) {
-	mgs := MockGooseService{mock: mock.Mock{}}
-	tx := sql.Tx{}
-
-	mgs.mock.On("unlockDB", &tx).Return(nil)
-
-	err := mgs.unlockDB(&tx)
-
-	assert.Nil(t, err)
-}
-
-func TestMigrateDB(t *testing.T) {
-	mgs := MockGooseService{mock: mock.Mock{}}
-
-	mgs.mock.On("migrateDB").Return(nil)
-
-	err := mgs.migrateDB()
-
-	assert.Nil(t, err)
-}
 
 func TestLockDB(t *testing.T) {
 	// Mock the database
@@ -148,6 +85,44 @@ func TestLockDB(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestIsTableLocked(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	sqlzMock := sqlz.New(db, "mysql")
+	assert.NoError(t, err)
+	defer db.Close()
+
+	ms := &MigrationService{db: sqlzMock}
+
+	// 🟢 **Test Case 1: Table is locked**
+	mock.ExpectQuery("SHOW OPEN TABLES WHERE In_use > 0 AND Table_name = ?").
+		WithArgs("lock_table").
+		WillReturnRows(sqlmock.NewRows([]string{"Database", "Table", "In_use", "Is_locked"}).
+			AddRow("test_db", "lock_table", 1, 0))
+
+	locked, err := ms.isTableLocked()
+	assert.NoError(t, err)
+	assert.True(t, locked, "Expected table to be locked")
+
+	mock.ExpectQuery("SHOW OPEN TABLES WHERE In_use > 0 AND Table_name = ?").
+		WithArgs("lock_table").
+		WillReturnRows(sqlmock.NewRows([]string{"Database", "Table", "In_use", "Is_locked"}))
+
+	locked, err = ms.isTableLocked()
+	assert.NoError(t, err)
+	assert.False(t, locked, "Expected table to be unlocked")
+
+	mock.ExpectQuery("SHOW OPEN TABLES WHERE In_use > 0 AND Table_name = ?").
+		WithArgs("lock_table").
+		WillReturnError(errors.New("database error"))
+
+	locked, err = ms.isTableLocked()
+	assert.Error(t, err)
+	assert.False(t, locked, "Expected function to return false on error")
+
+	// Ensure all expectations were met
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestUnlockDB(t *testing.T) {

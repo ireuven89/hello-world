@@ -26,15 +26,8 @@ func TestServer(t *testing.T) {
 	t.Logf("took total: %v", time.Now().UnixMilli()-startTime.UnixMilli())
 }
 
-func TestNullPointerException(t *testing.T) {
-	given := 10
+func TestClient(t *testing.T) {
 
-	if given != 5 {
-
-	}
-}
-
-func TestFunctional(t *testing.T) {
 }
 
 func TestFunc(t *testing.T) {

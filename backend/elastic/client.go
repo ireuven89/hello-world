@@ -1,6 +1,7 @@
 package elastic
 
 import (
+	"os"
 	"reflect"
 
 	"github.com/elastic/go-elasticsearch/v8"
@@ -8,6 +9,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 
 	"github.com/ireuven89/hello-world/backend/environment"
+	"github.com/ireuven89/hello-world/backend/utils"
 
 	"bytes"
 	"context"
@@ -27,7 +29,7 @@ import (
 type Service interface {
 	Insert(ctx context.Context, index string, doc interface{}) (string, error)
 	InsertBulk(ctx context.Context, index string, docs map[string][]interface{}) error
-	Search(ctx context.Context, index string, filters ...string) (SearchResponse, error)
+	Search(ctx context.Context, index string, query string) (SearchResponse, error)
 	Get(ctx context.Context, index string, docId string) (DocResponse, error)
 	Delete(ctx context.Context, index string, docId string) error
 	DeleteIndex(ctx context.Context, index string) error
@@ -64,15 +66,18 @@ type User struct {
 	Name      string `json:"name"`
 }
 
-func New(logger *zap.Logger) (Service, error) {
+// New - initialize the client
+func New(logger *zap.Logger, config utils.DataBaseConnection) (Service, error) {
 
 	//env
 	if err := environment.Load(); err != nil {
 		return nil, err
 	}
-	host := environment.Variables.ElasticHost
-	userName := environment.Variables.ElasticUsername
-	password := environment.Variables.ElasticPassword
+	host := os.Getenv(config.Host)
+	userName := os.Getenv(config.UserName)
+	password := os.Getenv(config.Password)
+
+	fmt.Printf("elastic host is %s user: %s password: %s", host, userName, password)
 
 	// Configure Elasticsearch client
 	es, err := elasticsearch.NewClient(elasticsearch.Config{
@@ -245,9 +250,12 @@ func (s *EsService) BulkSearch(ctx context.Context, queries []map[string]interfa
 	return users, nil
 }
 
-func (s *EsService) Search(ctx context.Context, index string, filters ...string) (SearchResponse, error) {
+func (s *EsService) Search(ctx context.Context, index string, query string) (SearchResponse, error) {
 	var result SearchResponse
-	response, err := s.client.Search(s.client.Search.WithIndex(index))
+	response, err := s.client.Search(
+		s.client.Search.WithIndex(index),
+		s.client.Search.WithContext(ctx),
+		s.client.Search.WithQuery(query))
 
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("failed to insert to %v", ctx.Value("operation")))
@@ -266,6 +274,49 @@ func (s *EsService) Search(ctx context.Context, index string, filters ...string)
 	}
 
 	return result, nil
+}
+
+func BuildESQuery(field string, values []string, wildCard bool) (string, error) {
+	// If there's only one value, use a simple match query
+	if len(values) == 1 {
+		query := map[string]interface{}{
+			"query": map[string]interface{}{
+				"match": map[string]interface{}{
+					field: values[0],
+				},
+			},
+		}
+		jsonQuery, err := json.Marshal(query)
+		if err != nil {
+			return "", err
+		}
+		return string(jsonQuery), nil
+	}
+
+	// If multiple values, use a bool-should query
+	var shouldClauses []map[string]interface{}
+	for _, v := range values {
+		shouldClauses = append(shouldClauses, map[string]interface{}{
+			"match": map[string]interface{}{
+				field: v,
+			},
+		})
+	}
+
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"should": shouldClauses,
+			},
+		},
+	}
+
+	jsonQuery, err := json.Marshal(query)
+	if err != nil {
+		return "", err
+	}
+
+	return string(jsonQuery), nil
 }
 
 func (s *EsService) Delete(ctx context.Context, index string, docId string) error {

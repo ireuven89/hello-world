@@ -14,22 +14,24 @@ type GetBidderRequest struct {
 }
 
 type GetBidderResponse struct {
-	model.Bidder
+	Bidder model.Bidder
 }
 
 func MakeEndpointGetBidder(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req, ok := request.(GetBidderRequest)
 		if !ok {
-			return nil, fmt.Errorf("MakeEndpointGetUser failed cast request")
+			return nil, fmt.Errorf("MakeEndpointGetBidder failed cast request")
 		}
 
 		result, err := s.GetBidder(req.uuid)
 		if err != nil {
-			return nil, fmt.Errorf("MakeEndpointRegister: %v", err)
+			return nil, fmt.Errorf("MakeEndpointGetBidder: %v", err)
 		}
 
-		return result, nil
+		return GetBidderResponse{
+			Bidder: result,
+		}, nil
 	}
 }
 
@@ -113,12 +115,12 @@ func MakeEndpointDeleteBidder(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req, ok := request.(DeleteBidderRequestModel)
 		if !ok {
-			return nil, fmt.Errorf("MakeEndpointCreateBidder failed cast request")
+			return nil, fmt.Errorf("MakeEndpointDeleteBidder failed cast request")
 		}
 
-		err = s.Delete(req.Uuid)
+		err = s.DeleteBidder(req.Uuid)
 		if err != nil {
-			return nil, fmt.Errorf("MakeEndpointCreateBidder: %v", err)
+			return nil, fmt.Errorf("MakeEndpointDeleteBidder: %v", err)
 		}
 
 		return nil, nil

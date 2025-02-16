@@ -33,7 +33,7 @@ type Router interface {
 }
 
 func (t *Transport) ListenAndServe(port string) {
-	log.Printf("Starting server on port %s...", port)
+	log.Printf("Starting bidder server on port %s...", port)
 	err := http.ListenAndServe(":"+port, t.router)
 	if err != nil {
 		log.Fatalf("Server failed to start: %v", err)
@@ -101,7 +101,7 @@ func formatBidder(response model.Bidder) map[string]interface{} {
 		"uuid":        response.Uuid,
 		"userUuid":    response.UserUuid,
 		"name":        response.Name,
-		"item":        response.Item,
+		"itemming":    response.Item,
 		"price":       response.Price,
 		"description": response.Description,
 		"created_at":  response.CreatedAt,
@@ -116,7 +116,7 @@ func decodeListBiddersRequest(ctx context.Context, r *http.Request) (request int
 		Input: model.BiddersInput{
 			Uuid: params.Get("uuid"),
 			Name: params.Get("name"),
-			Item: params.Get("item"),
+			Item: params.Get("itemming"),
 			Page: model.SetPage("offset", "limit"),
 		},
 	}, nil

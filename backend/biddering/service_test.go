@@ -90,7 +90,7 @@ func TestBidderService_Delete(t *testing.T) {
 
 	mockRepo.On("Delete", id).Return(nil)
 
-	err := service.Delete(id)
+	err := service.DeleteBidder(id)
 
 	assert.NoError(t, err)
 	mockRepo.AssertCalled(t, "Delete", id)

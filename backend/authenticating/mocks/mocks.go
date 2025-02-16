@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/ireuven89/hello-world/backend/authenticating/model"
+	"github.com/ireuven89/hello-world/backend/utils"
 )
 
 // MockService is a mocked implementation of the Service interface
@@ -25,6 +26,11 @@ func (m *MockService) VerifyToken(jwtToken string) (string, error) {
 	args := m.Called(jwtToken)
 	return args.String(0), args.Error(1)
 }
+func (m *MockService) Health() utils.ServiceHealthCheck {
+	args := m.Called()
+
+	return args.Get(0).(utils.ServiceHealthCheck)
+}
 
 type InMemMock struct {
 	Mock mock.Mock
@@ -39,4 +45,10 @@ func (ma *InMemMock) Find(username string) (model.User, error) {
 	args := ma.Mock.Called(username)
 
 	return args.Get(0).(model.User), args.Error(1)
+}
+
+func (ma *InMemMock) DbStatus() utils.DbStatus {
+	args := ma.Mock.Called()
+
+	return args.Get(0).(utils.DbStatus)
 }

@@ -5,10 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ireuven89/hello-world/backend/redis"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/ireuven89/hello-world/backend/redis"
 )
 
 const (
@@ -17,7 +18,7 @@ const (
 	ttl   = time.Duration(3)
 )
 
-var redisClient *redis.Service
+var redisClient redis.Redis
 
 func init() {
 	if err := os.Setenv("REDIS_HOST", "http://localhost/6379"); err != nil {
