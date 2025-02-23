@@ -83,12 +83,14 @@ func (s *Service) AddTask(task model.MigrationTask) {
 }
 
 func NewService(logger *zap.Logger, migrationsDB *mongo.Database, queuesDB *mongo.Database, internalService InternalService) *Service {
+	httpClient := http.Client{Timeout: 10 * time.Millisecond}
 
 	return &Service{
 		logger:          logger,
 		migrationDB:     migrationsDB,
 		queuesDB:        queuesDB,
 		internalService: internalService,
+		httpclient:      &httpClient,
 	}
 }
 
@@ -135,7 +137,7 @@ func (s *Service) ProcessTasks(ctx context.Context, migrationName string) {
 			wg.Add(1)
 			go func(t model.MigrationTask) {
 				defer wg.Done()
-				t.Status = taskStatus.InProgress
+				t.Status = model.TaskInProgress.String()
 				s.updateTask(ctx, &t, queueName)
 				if migration.Type == model.Http.String() {
 					s.processTaskHttp(ctx, &t, queueName)
@@ -176,7 +178,7 @@ func (s *Service) calcTimeLeft(ctx context.Context, startTime time.Time, endTime
 func (s *Service) updateMigration(ctx context.Context, migration, fieldName string, fieldValue interface{}) {
 	result, err := s.migrationDB.
 		Collection(migrationsCollection).
-		UpdateOne(ctx, bson.M{"name": migration}, bson.M{fieldName: fieldValue})
+		UpdateOne(ctx, bson.M{"name": migration}, bson.M{"$set": bson.M{fieldName: fieldValue}})
 
 	if err != nil {
 		s.logger.Error("failed updating migration", zap.Error(err))
@@ -192,7 +194,8 @@ func (s *Service) getMigrationStatus(ctx context.Context, migrationName string) 
 	var result model.Migration
 	err := s.migrationDB.
 		Collection(migrationsCollection).
-		FindOne(ctx, bson.M{"name": migrationName}).Decode(&result)
+		FindOne(ctx, bson.M{"name": migrationName}).
+		Decode(&result)
 
 	if err != nil {
 		return ""
@@ -238,7 +241,7 @@ func (s *Service) getTotalTasks(ctx context.Context, queue string) int64 {
 func (s *Service) getTasksLeft(ctx context.Context, queue string) int64 {
 	count, err := s.queuesDB.
 		Collection(queue).
-		CountDocuments(ctx, bson.M{"status": model.TaskPending})
+		CountDocuments(ctx, bson.M{"status": model.TaskPending.String()})
 	if err != nil {
 		s.logger.Error("failed counting documents", zap.String("queue", queue), zap.Error(err))
 		return 0
@@ -249,8 +252,8 @@ func (s *Service) getTasksLeft(ctx context.Context, queue string) int64 {
 
 // processTask - process with max retries
 func (s *Service) processTaskHttp(ctx context.Context, task *model.MigrationTask, queue string) {
-	retryFunc := retry.NewConstant(maxRetries)
-	err := retry.Do(ctx, retryFunc, func(ctx context.Context) error {
+	//execute
+	err := retry.Do(ctx, retry.WithMaxRetries(maxRetries, retry.NewConstant(500*time.Millisecond)), func(ctx context.Context) error {
 		body, err := json.Marshal(task.HttpBody)
 		if err != nil {
 			return retry.RetryableError(err)
@@ -270,10 +273,10 @@ func (s *Service) processTaskHttp(ctx context.Context, task *model.MigrationTask
 		return nil
 	})
 
-	//if failed  - rollback and update
+	//if failed  - rollback
 	if err != nil {
 		task.ErrorMessage = err.Error()
-		task.Status = taskStatus.Failed
+		task.Status = model.TaskFailed.String()
 		s.updateTask(ctx, task, queue)
 		if task.HttpRollBack != "" {
 			req, err := http.NewRequest(task.HttpMethod, task.HttpRollBack, nil)
@@ -286,6 +289,7 @@ func (s *Service) processTaskHttp(ctx context.Context, task *model.MigrationTask
 			}
 		}
 		s.logger.Error("failed executing task", zap.Error(err))
+		return
 	}
 
 	//if finished ok - update completed
@@ -300,10 +304,9 @@ func (s *Service) buildUrl(endpoint string, pathParams []string) string {
 		return endpoint
 	}
 
-	url.WriteString(endpoint + "/")
-
+	url.WriteString(endpoint)
 	for _, param := range pathParams {
-		url.WriteString(param)
+		url.WriteString("/" + param)
 	}
 
 	return url.String()
@@ -329,16 +332,18 @@ func (s *Service) processTaskInternal(ctx context.Context, task *model.Migration
 			s.updateTask(ctx, task, queue)
 		}
 	} else {
-		task.Status = taskStatus.Completed
+		task.Status = model.TaskCompleted.String()
 		s.updateTask(ctx, task, queue)
 	}
 }
 
 // updateTask - task with status
 func (s *Service) updateTask(ctx context.Context, task *model.MigrationTask, queueName string) {
+	//in case tasks are not in mongo
 	if skipUpdate {
 		return
 	}
+
 	updatedResult, err := s.queuesDB.
 		Collection(queueName).
 		UpdateOne(ctx, bson.M{"_id": task.ID}, bson.M{"$set": bson.M{"status": task.Status}})
@@ -356,13 +361,17 @@ func (s *Service) setSkipUpdate(skip bool) {
 	skipUpdate = skip
 }
 
+func (s *Service) stopMigration(ctx context.Context, name string) {
+	s.updateMigration(ctx, name, "status", model.Stopped.String())
+}
+
 // getMigration - fetch migration from DB  if exists
 func (s *Service) getMigration(ctx context.Context, name string) (model.Migration, error) {
 	var migration model.Migration
 
 	dbMigration := s.migrationDB.
 		Collection(migrationsCollection).
-		FindOne(ctx, bson.M{"migrationName": name})
+		FindOne(ctx, bson.M{"name": name})
 	if dbMigration == nil {
 		s.logger.Error("migration not found")
 		return model.Migration{}, errors.New("migration not exists")
@@ -380,11 +389,11 @@ func (s *Service) createMigration(ctx context.Context, migration model.Migration
 	result, err := s.migrationDB.
 		Collection(migrationsCollection).
 		InsertOne(ctx, bson.M{
-			"migrationName": migration.MigrationName,
-			"status":        model.Pending.String(),
-			"type":          migration.Type,
-			"queueName":     migration.QueueName,
-			"created_at":    time.Now(),
+			"name":       migration.MigrationName,
+			"status":     model.Pending.String(),
+			"type":       migration.Type,
+			"queueName":  migration.QueueName,
+			"created_at": time.Now(),
 		})
 
 	if err != nil {

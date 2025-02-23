@@ -9,7 +9,7 @@ import (
 type Migration struct {
 	ID            primitive.ObjectID `bson:"_id"`
 	Type          string             `bson:"type"`
-	MigrationName string             `bson:"migrationName"`
+	MigrationName string             `bson:"name"`
 	QueueName     string             `bson:"queueName"`
 	Status        string             `bson:"status"`
 	CreatedAt     time.Time          `bson:"createdAt"`

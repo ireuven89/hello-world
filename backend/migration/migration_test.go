@@ -21,24 +21,29 @@ import (
 )
 
 func TestMigration(t *testing.T) {
-	client, err := MustNewDB(utils.DataBaseConnection{Host: "mongodb://localhost:27017"})
+	client, container, err := setupInMemoryMongoDB()
 	logger := zaptest.NewLogger(t)
 	queueName := "test-queue"
 	migrationsDB := client.Database("migrations")
 	queuesDB := client.Database("queues")
 	queuesDB.Collection(queueName).InsertMany(context.Background(), []interface{}{
-		bson.M{"name": queueName, "status": "Pending", "taskID": "task1"},
-		bson.M{"name": queueName, "status": "Pending", "taskID": "task2"},
+		bson.M{"name": queueName, "status": model.Pending.String(), "taskID": "task1"},
+		bson.M{"name": queueName, "status": model.Pending.String(), "taskID": "task2"},
 	})
 	if err != nil {
 		t.Fatalf("failed initailize db %v", err)
 	}
 
+	defer container.Terminate(context.Background())
+
+	migrationsDB.Collection("migrations").InsertOne(context.Background(),
+		bson.M{"name": "test-migration", "type": model.Http.String(), "queueName": queueName, "status": model.Pending.String()})
+
 	service := NewService(logger, migrationsDB, queuesDB, nil)
 
-	tasks := service.getTasks(context.Background(), "test-queue", taskStatus.Pending, 0, batchSize)
-	tasks[0].Status = taskStatus.Completed
-	service.updateTask(context.Background(), &tasks[0], "test-queue")
+	tasks := service.getTasks(context.Background(), queueName, model.Pending.String(), 0, batchSize)
+	tasks[0].Status = model.TaskCompleted.String()
+	service.updateTask(context.Background(), &tasks[0], queueName)
 
 	left := service.getTasksLeft(context.Background(), "test-queue")
 	total := service.getTotalTasks(context.Background(), "test-queue")
@@ -94,23 +99,19 @@ func TestProcessTasksExternal(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 
 	// Create a new Service instance with the in-memory MongoDB client
-	service := &Service{
-		migrationDB: migrationDB,
-		queuesDB:    queuesDB,
-		logger:      logger,
-	}
+	service := NewService(logger, migrationDB, queuesDB, nil)
 
 	// Insert some test data into the MongoDB collection
 	_, err = queueCollection.InsertMany(context.Background(), []interface{}{
 		bson.M{"queueName": queueName, "status": model.Pending.String(), "taskID": "task1"},
 		bson.M{"queueName": queueName, "status": model.Pending.String(), "taskID": "task2"},
 	})
-	id, err := migrationCollection.InsertOne(context.Background(), bson.M{"migrationName": migration, "status": model.Pending.String(), "queueName": "test-queue", "type": model.Internal.String()})
+	id, err := migrationCollection.InsertOne(context.Background(), bson.M{"name": migration, "status": model.Pending.String(), "queueName": "test-queue", "type": model.Http.String()})
 	if err != nil {
 		t.Fatalf("Failed to insert test data: %v", err)
 	}
 
-	fmt.Printf("inserted id: %v ", id)
+	fmt.Printf("inserted id: %v\n ", id)
 
 	// Define expectations
 	processedCount := 0
@@ -124,20 +125,25 @@ func TestProcessTasksExternal(t *testing.T) {
 	processedCount += 2 // We know that we have inserted 2 tasks
 
 	// Verify the tasks have been processed
-	taskCount, err := queueCollection.CountDocuments(context.Background(), bson.M{"status": "InProgress"})
+	taskCount1, err := queueCollection.CountDocuments(context.Background(), bson.M{})
+	tasks, err := queueCollection.Find(context.Background(), bson.M{})
+	taskCount, err := queueCollection.CountDocuments(context.Background(), bson.M{"status": model.TaskFailed.String()})
 	if err != nil {
 		t.Fatalf("Failed to count InProgress tasks: %v", err)
 	}
 
+	var parsedTasks []model.MigrationTask
+	tasks.All(context.Background(), &parsedTasks)
+	assert.True(t, taskCount1 > 0)
 	assert.Equal(t, taskCount, int64(processedCount), "Tasks should be marked as 'InProgress'")
 
 	// Verify migration status was updated
-	var migrationStatus bson.M
-	err = migrationDB.Collection("migrations").FindOne(context.Background(), bson.M{"migration": migration}).Decode(&migrationStatus)
+	var migrationEntity model.Migration
+	err = migrationDB.Collection("migrations").FindOne(context.Background(), bson.M{"name": migration}).Decode(&migrationEntity)
 	if err != nil {
 		t.Fatalf("Failed to get migration status: %v", err)
 	}
-	assert.Equal(t, migrationStatus["status"], "Finished", "Migration should be marked as Finished")
+	assert.Equal(t, migrationEntity.Status, model.Finished.String(), "Migration should be marked as Finished")
 
 	// Clean up
 	_, err = queueCollection.DeleteMany(context.Background(), bson.M{"queueName": queueName})
@@ -174,7 +180,6 @@ func TestExecute(t *testing.T) {
 	service := NewService(logger, nil, nil, NewIMockInternalService())
 	service.setSkipUpdate(true)
 	service.processTaskInternal(ctx, &task, "")
-
 }
 
 type internalTests struct {
@@ -271,4 +276,13 @@ func (mis *MockInternalService) Rollback(print interface{}) error {
 	}
 
 	return nil
+}
+
+func TestUrlCreate(t *testing.T) {
+	service := NewService(nil, nil, nil, nil)
+	endpoint := "http://endpoint:1000"
+	params := []string{"param1", "param2"}
+	url := service.buildUrl(endpoint, params)
+
+	assert.Equal(t, "http://endpoint:1000/param1/param2", url)
 }
