@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/ireuven89/hello-world/backend/server"
 	"github.com/labstack/gommon/log"
+
+	"github.com/ireuven89/hello-world/backend/server"
 )
 
 func main() {
@@ -10,7 +11,7 @@ func main() {
 	mainServer, err := server.New()
 
 	/*	tenant := os.Getenv("TENANT")
-		configPath, err := filepath.abs(fmt.Sprintf("./users/config/%s", tenant))
+		configPath, err := filepath.abs(fmt.Sprintf("./userring/config/%s", tenant))
 		config, err := utils.GetConfiguration(configPath)*/
 
 	/*loggerConfig := zap.NewDevelopmentConfig()
@@ -23,8 +24,8 @@ func main() {
 		panic(err)
 	}
 
-	//userTransport := users.NewTransport(httprouter.New(), usersService)
-	//users.RegisterRoutes(httprouter.New(), usersService)
+	//userTransport := userring.NewTransport(httprouter.New(), usersService)
+	//userring.RegisterRoutes(httprouter.New(), usersService)
 
 	//http.ListenAndServe(config.TenantEndpoint)
 

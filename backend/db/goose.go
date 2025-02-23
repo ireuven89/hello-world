@@ -1,10 +1,13 @@
 package db
 
 import (
+	"context"
+	"errors"
 	"time"
 
 	"github.com/ido50/sqlz"
 	"github.com/pressly/goose/v3"
+	"github.com/sethvargo/go-retry"
 
 	"github.com/ireuven89/hello-world/backend/db/model"
 
@@ -42,6 +45,17 @@ func New(db *sqlz.DB, logger *zap.Logger, migrationsDir string) Service {
 
 // Run - this function migrates DB
 func (ms *MigrationService) Run() error {
+
+	//if table is locked wait until the migration is finished
+	if ms.skipMigration() {
+		ms.logger.Info("busy wait until the migration is finished..")
+		for !ms.skipMigration() {
+			time.Sleep(500 * time.Millisecond)
+		}
+		return nil
+	}
+
+	//else execute migration
 	tx, err := ms.lockDB()
 
 	if err != nil {
@@ -60,6 +74,43 @@ func (ms *MigrationService) Run() error {
 	}
 
 	return nil
+}
+
+// skipMigration - skips if table is locked
+func (ms *MigrationService) skipMigration() bool {
+	var skip bool
+
+	retry.Exponential(context.Background(), time.Second*30, func(ctx context.Context) error {
+		locked, err := ms.isTableLocked()
+
+		if err != nil {
+			return retry.RetryableError(errors.New("failed to validate table locked"))
+		}
+
+		if locked {
+			locked = true
+			return nil
+		}
+
+		return nil
+	})
+
+	return skip
+}
+
+func (ms *MigrationService) isTableLocked() (bool, error) {
+	query := "SHOW OPEN TABLES WHERE In_use > 0 AND `Table` = ?"
+	var dbName, tblName string
+	var inUse, isLocked int
+
+	err := ms.db.QueryRow(query, model.LockTable).Scan(&dbName, &tblName, &inUse, &isLocked)
+	if err == sql.ErrNoRows {
+		return false, nil // No locks found
+	} else if err != nil {
+		return false, err
+	}
+
+	return inUse > 0, nil
 }
 
 // lockDB - this function locks the DB

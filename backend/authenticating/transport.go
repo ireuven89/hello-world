@@ -31,8 +31,8 @@ type Router interface {
 }
 
 func (t *Transport) ListenAndServe(port string) {
-	log.Printf("Starting server on port %s...", port)
-	err := http.ListenAndServe(":"+port, t.router)
+	log.Printf("Starting auth server on port %s...", port)
+	err := http.ListenAndServe("0.0.0.0:"+port, t.router)
 	if err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}

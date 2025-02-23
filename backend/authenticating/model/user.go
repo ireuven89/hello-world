@@ -5,4 +5,4 @@ type User struct {
 	Password string `db:"password"` // This will store the hashed password
 }
 
-const TableName = "users"
+const TableName = "userring"

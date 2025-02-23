@@ -53,7 +53,7 @@ func (r *Repo) Find(username string) (model.User, error) {
 	var result model.User
 
 	q := r.db.Select("user", "password").
-		From("users").
+		From("userring").
 		Where(sqlz.WhereCondition(sqlz.Eq("user", username)))
 
 	if err := q.GetRow(&result); err != nil {

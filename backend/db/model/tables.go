@@ -1,7 +1,7 @@
 package model
 
 const (
-	Users     = "users"
+	Users     = "userring"
 	Auctions  = "auctions"
 	Bidders   = "bidders"
 	LockTable = "lock_table"
