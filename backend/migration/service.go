@@ -48,12 +48,6 @@ const (
 	maxRetries = 3
 )
 
-type migrationStatusEnum struct {
-	Pending  string
-	Finished string
-	Stopped  string
-}
-
 type taskStatusEnum struct {
 	Pending    string
 	Completed  string
@@ -61,21 +55,11 @@ type taskStatusEnum struct {
 	Failed     string
 }
 
-var migrationStatus = migrationStatusEnum{
-	Pending:  "PENDING",
-	Finished: "FINISHED",
-	Stopped:  "STOPPED",
-}
-
 var taskStatus = taskStatusEnum{
 	Pending:    "PENDING",
 	InProgress: "IN_PROGRESS",
 	Completed:  "COMPLETED",
 	Failed:     "FAILED",
-}
-
-func NewMigrationService(numThreads int) *Service {
-	return &Service{numThreads: numThreads}
 }
 
 func (s *Service) AddTask(task model.MigrationTask) {
@@ -270,6 +254,9 @@ func (s *Service) processTaskHttp(ctx context.Context, task *model.MigrationTask
 			return retry.RetryableError(err)
 		}
 
+		//if finished ok - update completed
+		task.Status = model.TaskCompleted.String()
+		s.updateTask(ctx, task, queue)
 		return nil
 	})
 
@@ -292,9 +279,6 @@ func (s *Service) processTaskHttp(ctx context.Context, task *model.MigrationTask
 		return
 	}
 
-	//if finished ok - update completed
-	task.Status = taskStatus.Completed
-	s.updateTask(ctx, task, queue)
 }
 
 func (s *Service) buildUrl(endpoint string, pathParams []string) string {
@@ -316,24 +300,25 @@ func (s *Service) processTaskInternal(ctx context.Context, task *model.Migration
 	err := retry.Do(ctx, retry.WithMaxRetries(maxRetries, retry.NewConstant(10*time.Millisecond)), func(ctx context.Context) error {
 
 		if err := s.internalService.Execute(task.Params); err != nil {
-			s.logger.Error("failed executing task", zap.Error(err))
+			s.logger.Error("failed executing task", zap.Error(err), zap.String("name", task.Name), zap.Any("params", task.Params))
 			return retry.RetryableError(err)
 		}
 
+		//update task completed - if finished
+		task.Status = model.TaskCompleted.String()
+		s.updateTask(ctx, task, queue)
 		return nil
 	})
 
 	if err != nil {
 		err = s.internalService.Rollback(task.RollbackParams)
-		if err != nil {
-			s.logger.Error("failed rollback", zap.String("task", task.Name), zap.Error(err))
-			task.ErrorMessage = err.Error()
-			task.Status = model.TaskFailed.String()
-			s.updateTask(ctx, task, queue)
-		}
-	} else {
-		task.Status = model.TaskCompleted.String()
+		task.Status = model.TaskFailed.String()
 		s.updateTask(ctx, task, queue)
+		task.ErrorMessage = err.Error()
+		if err != nil {
+			s.logger.Error("failed rollback", zap.String("task", task.Name), zap.Error(err), zap.Any("params", task.RollbackParams))
+			task.RollbackErrorMessage = err.Error()
+		}
 	}
 }
 
