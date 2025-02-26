@@ -36,11 +36,11 @@ func AssignRoutes(e *echo.Echo) {
 	//handlers
 
 	//model
-	group.Add(http.MethodGet, "/users", GetUsersHandler)
-	group.Add(http.MethodGet, "/users/:userUuid", GetUsersHandler)
-	group.Add(http.MethodPost, "/users", UpsertUserHandler)
-	group.Add(http.MethodPut, "/users/:userUuid", PutUserHandler)
-	group.Add(http.MethodDelete, "/users/:userUuid", DeleteUserHandler)
+	group.Add(http.MethodGet, "/userring", GetUsersHandler)
+	group.Add(http.MethodGet, "/userring/:userUuid", GetUsersHandler)
+	group.Add(http.MethodPost, "/userring", UpsertUserHandler)
+	group.Add(http.MethodPut, "/userring/:userUuid", PutUserHandler)
+	group.Add(http.MethodDelete, "/userring/:userUuid", DeleteUserHandler)
 
 	//auction
 	group.Add(http.MethodGet, "/auctions", GetAuctionsHandler)
@@ -49,7 +49,7 @@ func AssignRoutes(e *echo.Echo) {
 	group.Add(http.MethodPut, "/auctions/:userUuid", PutAuctionHandler)
 	group.Add(http.MethodDelete, "/auctions/:userUuid", DeleteAuctionHandler)
 
-	//item
+	//itemming
 	group.Add(http.MethodGet, "/items", GetItemsHandler)
 	group.Add(http.MethodGet, "/items/:itemUuid", GetItemHandler)
 	group.Add(http.MethodPost, "/items/:userUuid", PostItemHandler)
@@ -72,7 +72,7 @@ func GetUsersHandler(c echo.Context) error {
 	result, err := repos.UserRepo.List(input)
 
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, "failed to list users")
+		return c.JSON(http.StatusInternalServerError, "failed to list userring")
 	}
 	*/
 	return c.JSON(http.StatusOK, "")

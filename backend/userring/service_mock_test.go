@@ -1,4 +1,4 @@
-package users
+package userring
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
 
-	"github.com/ireuven89/hello-world/backend/users/model"
+	"github.com/ireuven89/hello-world/backend/userring/model"
 )
 
 type MockService struct {

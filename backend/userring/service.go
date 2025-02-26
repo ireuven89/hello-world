@@ -1,8 +1,9 @@
-package users
+package userring
 
 import (
-	"github.com/ireuven89/hello-world/backend/users/model"
 	"go.uber.org/zap"
+
+	"github.com/ireuven89/hello-world/backend/userring/model"
 )
 
 type Service interface {
@@ -37,7 +38,7 @@ func (s *service) ListUsers(input model.UserFetchInput) ([]model.User, error) {
 	result, err := s.userRepository.ListUsers(input)
 
 	if err != nil {
-		s.logger.Error("failed to retrieve users", zap.Error(err))
+		s.logger.Error("failed to retrieve userring", zap.Error(err))
 		return nil, err
 	}
 
@@ -47,7 +48,7 @@ func (s *service) GetUser(uuid string) (model.User, error) {
 	result, err := s.userRepository.FindUser(uuid)
 
 	if err != nil {
-		s.logger.Error("failed to retrieve users", zap.Error(err))
+		s.logger.Error("failed to retrieve userring", zap.Error(err))
 		return model.User{}, err
 	}
 
@@ -57,7 +58,7 @@ func (s *service) CreateUser(input model.UserUpsertInput) (string, error) {
 	result, err := s.userRepository.Upsert(input)
 
 	if err != nil {
-		s.logger.Error("failed to retrieve users", zap.Error(err))
+		s.logger.Error("failed to retrieve userring", zap.Error(err))
 		return "", err
 	}
 
@@ -68,7 +69,7 @@ func (s *service) UpdateUser(input model.UserUpsertInput) error {
 	_, err := s.userRepository.Upsert(input)
 
 	if err != nil {
-		s.logger.Error("failed to retrieve users", zap.Error(err))
+		s.logger.Error("failed to retrieve userring", zap.Error(err))
 		return err
 	}
 
@@ -77,7 +78,7 @@ func (s *service) UpdateUser(input model.UserUpsertInput) error {
 
 func (s *service) DeleteUser(uuid string) error {
 	if err := s.userRepository.Delete(uuid); err != nil {
-		s.logger.Error("failed to retrieve users", zap.Error(err))
+		s.logger.Error("failed to retrieve userring", zap.Error(err))
 		return err
 	}
 

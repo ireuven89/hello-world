@@ -26,6 +26,18 @@ func (ma *InMemMock) Find(username string) (model.User, error) {
 	return args.Get(0).(model.User), args.Error(1)
 }
 
+func (ma *InMemMock) FindAll(page model.Page) ([]model.User, error) {
+	args := ma.mock.Called(page)
+
+	return args.Get(0).([]model.User), args.Error(1)
+}
+
+func (ma *InMemMock) Delete(id string) error {
+	args := ma.mock.Called(id)
+
+	return args.Error(0)
+}
+
 func TestAuthService_RegisterSuccess(t *testing.T) {
 	logger := zap.NewNop()
 	mockInMemStore := InMemMock{mock: mock.Mock{}}

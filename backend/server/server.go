@@ -16,20 +16,20 @@ import (
 	"github.com/ireuven89/hello-world/backend/db"
 	"github.com/ireuven89/hello-world/backend/elastic"
 	"github.com/ireuven89/hello-world/backend/environment"
-	"github.com/ireuven89/hello-world/backend/item"
-	itemrepo "github.com/ireuven89/hello-world/backend/item/repository"
+	"github.com/ireuven89/hello-world/backend/itemming"
+	itemrepo "github.com/ireuven89/hello-world/backend/itemming/repository"
 	"github.com/ireuven89/hello-world/backend/publishing"
 	"github.com/ireuven89/hello-world/backend/redis"
 	"github.com/ireuven89/hello-world/backend/routes"
 	"github.com/ireuven89/hello-world/backend/subscribing"
-	"github.com/ireuven89/hello-world/backend/users"
-	userrepo "github.com/ireuven89/hello-world/backend/users/repository"
+	"github.com/ireuven89/hello-world/backend/userring"
+	userrepo "github.com/ireuven89/hello-world/backend/userring/repository"
 	"github.com/ireuven89/hello-world/backend/utils"
 )
 
 type Server struct {
-	UserService users.Service
-	ItemService item.Service
+	UserService userring.Service
+	ItemService itemming.Service
 	Logger      *zap.Logger
 	Echo        *echo.Echo
 	Elastic     elastic.Service
@@ -55,7 +55,14 @@ func New() (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	/*
+		mongoCLient, err := migration2.MustNewDB(config.Databases["mongo"])
+		migrationDB := mongoCLient.Database("migrations")
+		queues := mongoCLient.Database("queues")
 
+		migrationService := migration2.NewService(logger, migrationDB, queues)
+		migrationService.ProcessTasks(context.Background(), "test-migration")
+	*/
 	awsClient, err := aws.New(logger)
 
 	if err != nil {
@@ -76,15 +83,16 @@ func New() (*Server, error) {
 	authService := authenticating.NewAuthService(userStore, logger)
 	authRouter := httprouter.New()
 	authTransport := authenticating.NewTransport(authService, authRouter)
+	logger.Info("starting auth service...")
 	go authTransport.ListenAndServe(config.ServicePort)
 
 	//itemming
-	itemConfig, err := utils.LoadConfig("item", os.Getenv("env"))
+	itemConfig, err := utils.LoadConfig("itemming", os.Getenv("env"))
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to initiate db %v", err))
 		return nil, err
 	}
-	itemsDB, itemsMigrationDir, err := item.MustNewDB()
+	itemsDB, itemsMigrationDir, err := itemming.MustNewDB()
 
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to initiate db %v", err))
@@ -95,15 +103,16 @@ func New() (*Server, error) {
 		return nil, err
 	}
 	itemRepo := itemrepo.New(itemsDB, logger, redisClient)
-	itemService := item.New(itemRepo, logger)
+	itemService := itemming.New(itemRepo, logger)
 	itemRouter := httprouter.New()
-	itemTransport := item.NewTransport(itemService, itemRouter)
+	itemTransport := itemming.NewTransport(itemService, itemRouter)
+	logger.Info("starting auth service...")
 	go itemTransport.ListenAndServe(itemConfig.ServicePort)
 
 	//userring
-	usersDB, userMigrationDir, err := users.MustNewDB()
+	usersDB, userMigrationDir, err := userring.MustNewDB()
 	if err != nil {
-		logger.Error(fmt.Sprintf("failed to initiate users DB %v", err))
+		logger.Error(fmt.Sprintf("failed to initiate userring DB %v", err))
 		panic(err)
 	}
 
@@ -113,25 +122,13 @@ func New() (*Server, error) {
 	}
 
 	userRepo := userrepo.New(usersDB, redisClient, logger)
-	usersService := users.New(logger, userRepo)
+	usersService := userring.New(logger, userRepo)
 	userRouter := httprouter.New()
-	transport := users.NewTransport(usersService, userRouter)
-	go transport.ListenAndServe("7000")
+	userTransport := userring.NewTransport(usersService, userRouter)
+	go userTransport.ListenAndServe(config.ServicePort)
+	logger.Info("starting auth service...")
 
-	//publishing
-	publiserr, err := publishing.New(logger)
-
-	if err != nil {
-		return nil, err
-	}
-
-	//subscribing
-	subscriberr, err := subscribing.New(logger)
-
-	if err != nil {
-		return nil, err
-	}
-
+	//remoting
 	echoServer := echo.New()
 	if err != nil {
 		return nil, err
@@ -146,5 +143,5 @@ func New() (*Server, error) {
 
 	logger.Info("Server has been initialized")
 
-	return &Server{Auth: authService, Redis: redisClient, ItemService: itemService, UserService: usersService, Logger: logger, Echo: echoServer, AWSClient: awsClient, Elastic: es, Sub: subscriberr, Pub: publiserr}, nil
+	return &Server{Auth: authService, Redis: redisClient, ItemService: itemService, UserService: usersService, Logger: logger, Echo: echoServer, AWSClient: awsClient, Elastic: es}, nil
 }

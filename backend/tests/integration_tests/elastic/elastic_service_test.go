@@ -61,7 +61,15 @@ func init() {
 	t := testing.T{}
 	logger := zaptest.NewLogger(&t)
 
+<<<<<<< Updated upstream
 	es, err := elastic.New(logger)
+=======
+	config, err := utils.LoadConfig("elastic", "ENV")
+	if err != nil {
+		t.Error(err)
+	}
+	es, err := elastic.New(logger, config.Databases["elastic"])
+>>>>>>> Stashed changes
 
 	if err != nil {
 		panic(fmt.Sprintf("failed initialize service %v", err))

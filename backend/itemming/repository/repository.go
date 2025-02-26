@@ -9,7 +9,7 @@ import (
 	"github.com/ido50/sqlz"
 	"go.uber.org/zap"
 
-	"github.com/ireuven89/hello-world/backend/item/model"
+	"github.com/ireuven89/hello-world/backend/itemming/model"
 )
 
 type ItemRepository struct {

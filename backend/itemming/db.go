@@ -1,4 +1,4 @@
-package item
+package itemming
 
 import (
 	"database/sql"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/ido50/sqlz"
+
 	"github.com/ireuven89/hello-world/backend/environment"
 )
 

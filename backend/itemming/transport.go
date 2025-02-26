@@ -1,4 +1,4 @@
-package item
+package itemming
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/labstack/gommon/log"
 
-	"github.com/ireuven89/hello-world/backend/item/model"
+	"github.com/ireuven89/hello-world/backend/itemming/model"
 )
 
 func NewTransport(s Service, router *httprouter.Router) Transport {
@@ -33,8 +33,8 @@ type Router interface {
 }
 
 func (t *Transport) ListenAndServe(port string) {
-	log.Printf("Starting server on port %s...", port)
-	err := http.ListenAndServe(":"+port, t.router)
+	log.Printf("Starting itemming server on port %s...", port)
+	err := http.ListenAndServe("0.0.0.0:"+port, t.router)
 	if err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}

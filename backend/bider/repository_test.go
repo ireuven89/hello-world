@@ -50,7 +50,7 @@ func TestRepository_List(t *testing.T) {
 	input := model.BiddersInput{
 		Page: model.PageRequest{Offset: 0},
 		Name: "name",
-		Item: "item",
+		Item: "itemming",
 	}
 	expectedResult := []model.Bidder{
 		{
@@ -63,10 +63,10 @@ func TestRepository_List(t *testing.T) {
 	}
 
 	redisQuery := fmt.Sprintf("%s%s%s%v%v", input.Uuid, input.Name, input.Item, input.Page.Offset, input.Page.GetLimit())
-	rows := sqlmock.NewRows([]string{"uuid", "name", "item", "created_at", "updated_at"}).
+	rows := sqlmock.NewRows([]string{"uuid", "name", "itemming", "created_at", "updated_at"}).
 		AddRow("mock-uuid", input.Name, input.Item, createAt, updateAt)
-	mockSql.ExpectQuery("SELECT uuid, name, item, created_at, updated_at FROM bidders").
-		WithArgs("name", "item").
+	mockSql.ExpectQuery("SELECT uuid, name, itemming, created_at, updated_at FROM bidders").
+		WithArgs("name", "itemming").
 		WillReturnRows(rows)
 
 	//redis cache miss and set valid
@@ -97,7 +97,7 @@ func TestRepository_Single(t *testing.T) {
 	input := model.BiddersInput{
 		Page: model.PageRequest{Offset: 0},
 		Name: "name",
-		Item: "item",
+		Item: "itemming",
 	}
 	expectedResult := model.Bidder{
 		Uuid:      "mock-uuid",
@@ -106,9 +106,9 @@ func TestRepository_Single(t *testing.T) {
 		CreatedAt: createAt,
 		UpdatedAt: updateAt,
 	}
-	rows := sqlmock.NewRows([]string{"uuid", "name", "item", "created_at", "updated_at"}).
-		AddRow(mockUuid, "name", "item", createAt, updateAt)
-	mockSql.ExpectQuery("SELECT uuid, name, item, created_at, updated_at FROM bidders").
+	rows := sqlmock.NewRows([]string{"uuid", "name", "itemming", "created_at", "updated_at"}).
+		AddRow(mockUuid, "name", "itemming", createAt, updateAt)
+	mockSql.ExpectQuery("SELECT uuid, name, itemming, created_at, updated_at FROM bidders").
 		WithArgs(mockUuid).
 		WillReturnRows(rows)
 

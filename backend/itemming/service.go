@@ -1,9 +1,9 @@
-package item
+package itemming
 
 import (
 	"go.uber.org/zap"
 
-	"github.com/ireuven89/hello-world/backend/item/model"
+	"github.com/ireuven89/hello-world/backend/itemming/model"
 )
 
 type Service interface {
@@ -57,7 +57,7 @@ func (s *ServiceItem) UpdateItem(item model.ItemInput) error {
 	_, err := s.repo.Upsert(item)
 
 	if err != nil {
-		s.logger.Error("failed to update item", zap.Any("update item", item), zap.Error(err))
+		s.logger.Error("failed to update itemming", zap.Any("update itemming", item), zap.Error(err))
 		return err
 	}
 
@@ -67,7 +67,7 @@ func (s *ServiceItem) CreateItem(item model.ItemInput) (string, error) {
 	id, err := s.repo.Upsert(item)
 
 	if err != nil {
-		s.logger.Error("failed to create item", zap.Any("create item", item), zap.Error(err))
+		s.logger.Error("failed to create itemming", zap.Any("create itemming", item), zap.Error(err))
 		return "", err
 	}
 
@@ -77,7 +77,7 @@ func (s *ServiceItem) DeleteItem(uuid string) error {
 	err := s.repo.Delete(uuid)
 
 	if err != nil {
-		s.logger.Error("failed to delete item", zap.Any("delete item", uuid), zap.Error(err))
+		s.logger.Error("failed to delete itemming", zap.Any("delete itemming", uuid), zap.Error(err))
 		return err
 	}
 

@@ -1,10 +1,12 @@
-package users
+package userring
 
 import (
 	"context"
 	"fmt"
+
 	"github.com/go-kit/kit/endpoint"
-	"github.com/ireuven89/hello-world/backend/users/model"
+
+	"github.com/ireuven89/hello-world/backend/userring/model"
 )
 
 func MakeEndpointGetUser(s Service) endpoint.Endpoint {

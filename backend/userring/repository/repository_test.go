@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap/zaptest"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 
-	"github.com/ireuven89/hello-world/backend/users/model"
+	"github.com/ireuven89/hello-world/backend/userring/model"
 )
 
 type MockRedisClient struct {
@@ -58,7 +58,7 @@ func TestRepository_FindUserWithoutCaching(t *testing.T) {
 	repo := New(mockSqlz.sqlz, mockRedis, logger)
 
 	cachedQuery := fmt.Sprintf("FindUser:%s", "uuid")
-	expectedQuery := `SELECT id, uuid, name, region FROM users WHERE uuid = ?`
+	expectedQuery := `SELECT id, uuid, name, region FROM userring WHERE uuid = ?`
 	rows := sqlmock.NewRows([]string{"id", "uuid", "name", "region"}).
 		AddRow(1, "1234", "John", "US")
 	expectedResult := model.User{
@@ -95,7 +95,7 @@ func TestRepository_GetWithCaching(t *testing.T) {
 	repo := New(mockSqlz.sqlz, mockRedis, logger)
 
 	cachedQuery := fmt.Sprintf("FindUser:%s", "uuid")
-	expectedQuery := `SELECT id, uuid, name, region FROM users WHERE uuid = ?`
+	expectedQuery := `SELECT id, uuid, name, region FROM userring WHERE uuid = ?`
 	rows := sqlmock.NewRows([]string{"id", "uuid", "name", "region"}).
 		AddRow(1, "1234", "John", "US")
 	cachedUser := model.User{
@@ -128,7 +128,7 @@ func TestUserRepository_ListUsersWithCaching(t *testing.T) {
 	repo := New(mockSqlz.sqlz, mockRedis, logger)
 
 	cachedQuery := fmt.Sprintf("ListUsers:%s%s%s%v%v", input.Region, input.Name, input.Uuid, input.Page, input.Size)
-	expectedQuery := `SELECT id, uuid, name, region FROM users WHERE name = ?`
+	expectedQuery := `SELECT id, uuid, name, region FROM userring WHERE name = ?`
 	rows := sqlmock.NewRows([]string{"id", "uuid", "name", "region"}).
 		AddRow(1, "1234", "name", "US")
 	cachedUser := []model.User{{
@@ -177,7 +177,7 @@ func TestUpsert_Create(t *testing.T) {
 	mockUuid := uuid.New().String()
 
 	// Setup the expectation for the insert query
-	mock.ExpectQuery("INSERT INTO users ").WithArgs(sqlmock.AnyArg(), input.Name, input.Region).WillReturnRows(
+	mock.ExpectQuery("INSERT INTO userring ").WithArgs(sqlmock.AnyArg(), input.Name, input.Region).WillReturnRows(
 		sqlmock.NewRows([]string{"id"}).AddRow(mockUuid),
 	)
 
@@ -213,7 +213,7 @@ func TestUserRepository_Upsert_Update(t *testing.T) {
 	}
 
 	// Mock the expected update query
-	mock.ExpectQuery(`UPDATE users SET name = \?, region = \? WHERE uuid = \? RETURNING id`).
+	mock.ExpectQuery(`UPDATE userring SET name = \?, region = \? WHERE uuid = \? RETURNING id`).
 		WithArgs(input.Name, input.Region, input.Uuid).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(input.Uuid))
 

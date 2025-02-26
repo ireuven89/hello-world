@@ -5,8 +5,10 @@ import (
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/ireuven89/hello-world/backend/environment"
 	"go.uber.org/zap"
+
+	"github.com/ireuven89/hello-world/backend/environment"
+	"github.com/ireuven89/hello-world/backend/utils"
 )
 
 type Service interface {
@@ -32,6 +34,38 @@ func New() (*kafka.Producer, error) {
 	}
 
 	return producer, err
+}
+
+func NewConsumer(config utils.DataBaseConnection) (*kafka.Consumer, error) {
+	cfg := &kafka.ConfigMap{
+		"bootstrap.servers":  config.Host,
+		"group.id":           config.GroupId,
+		"auto.offset.reset":  "earliest", // or "latest" based on your requirement
+		"enable.auto.commit": true,
+	}
+
+	consumer, err := kafka.NewConsumer(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return consumer, nil
+}
+
+func NewProducer(config utils.DataBaseConnection) (*kafka.Producer, error) {
+	cfg := &kafka.ConfigMap{
+		"bootstrap.servers":  config.Host,
+		"group.id":           config.GroupId,
+		"auto.offset.reset":  "earliest", // or "latest" based on your requirement
+		"enable.auto.commit": true,
+	}
+	producer, err := kafka.NewProducer(cfg)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return producer, nil
 }
 
 func (p *Producer) Publish(key string, message string) error {

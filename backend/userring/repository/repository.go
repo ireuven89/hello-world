@@ -11,7 +11,7 @@ import (
 
 	dbmodel "github.com/ireuven89/hello-world/backend/db/model"
 	"github.com/ireuven89/hello-world/backend/db/utils"
-	"github.com/ireuven89/hello-world/backend/users/model"
+	"github.com/ireuven89/hello-world/backend/userring/model"
 )
 
 type Redis interface {
@@ -36,7 +36,7 @@ func New(db *sqlz.DB, redis Redis, logger *zap.Logger) *UserRepository {
 
 const redisQueryTTl = time.Minute * 3
 
-// ListUsers - this method queries users from DB
+// ListUsers - this method queries userring from DB
 func (r *UserRepository) ListUsers(input model.UserFetchInput) ([]model.User, error) {
 	var result []model.User
 
@@ -68,7 +68,7 @@ func (r *UserRepository) ListUsers(input model.UserFetchInput) ([]model.User, er
 
 	q.Where(whereClauses...)
 
-	utils.New().DebugSelect(q, "fetch users")
+	utils.New().DebugSelect(q, "fetch userring")
 
 	err = q.GetAll(&result)
 
@@ -84,7 +84,7 @@ func (r *UserRepository) ListUsers(input model.UserFetchInput) ([]model.User, er
 	return result, nil
 }
 
-// FindUser - this method queries single users from DB
+// FindUser - this method queries single userring from DB
 func (r *UserRepository) FindUser(uuid string) (model.User, error) {
 	var result model.User
 
@@ -104,7 +104,7 @@ func (r *UserRepository) FindUser(uuid string) (model.User, error) {
 		From(dbmodel.Users).
 		Where(sqlz.Eq("uuid", uuid))
 
-	utils.New().DebugSelect(q, "get users")
+	utils.New().DebugSelect(q, "get userring")
 
 	err = q.GetRow(&result)
 
@@ -120,7 +120,7 @@ func (r *UserRepository) FindUser(uuid string) (model.User, error) {
 	return result, nil
 }
 
-// Upsert - this method upsert users to DB
+// Upsert - this method upsert userring to DB
 func (r *UserRepository) Upsert(input model.UserUpsertInput) (string, error) {
 	var id string
 	var create bool
@@ -138,7 +138,7 @@ func (r *UserRepository) Upsert(input model.UserUpsertInput) (string, error) {
 		}).
 			Returning("id")
 
-		utils.New().DebugInsert(q, "insert users")
+		utils.New().DebugInsert(q, "insert userring")
 
 		if err := q.GetRow(&id); err != nil {
 			r.logger.Error("failed to insert model: ", zap.Error(err))
@@ -155,7 +155,7 @@ func (r *UserRepository) Upsert(input model.UserUpsertInput) (string, error) {
 				"id",
 			)
 
-		utils.New().DebugUpdate(q, "update users")
+		utils.New().DebugUpdate(q, "update userring")
 
 		if err := q.GetRow(&id); err != nil {
 			r.logger.Error("failed to insert model: ", zap.Error(err))
@@ -166,12 +166,12 @@ func (r *UserRepository) Upsert(input model.UserUpsertInput) (string, error) {
 	return id, nil
 }
 
-// Delete - this query deletes users from DB
+// Delete - this query deletes userring from DB
 func (r *UserRepository) Delete(uuid string) error {
 
-	q := r.db.DeleteFrom("users").Where(sqlz.Eq("uuid", uuid))
+	q := r.db.DeleteFrom("userring").Where(sqlz.Eq("uuid", uuid))
 
-	utils.New().DebugDelete(q, "delete users")
+	utils.New().DebugDelete(q, "delete userring")
 
 	if _, err := q.Exec(); err != nil {
 		return err

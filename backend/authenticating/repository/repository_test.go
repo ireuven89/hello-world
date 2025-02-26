@@ -19,7 +19,7 @@ func TestRepo_Find(t *testing.T) {
 
 	mockResult := sqlmock.NewRows(
 		[]string{"user", "password"}).AddRow(user, password)
-	mock.ExpectQuery("SELECT user, password FROM users WHERE user = ?").WithArgs(user).WillReturnRows(mockResult)
+	mock.ExpectQuery("SELECT user, password FROM userring WHERE user = ?").WithArgs(user).WillReturnRows(mockResult)
 
 	result, err := repo.Find(user)
 
@@ -37,10 +37,10 @@ func TestRepo_Save(t *testing.T) {
 	password := "password"
 	repo := New(logger, sqlzMock)
 
-	mock.ExpectExec("INSERT INTO users ").
+	mock.ExpectExec("INSERT INTO userring").
 		WithArgs(sqlmock.AnyArg(), password, user). // Matching any argument for ID
 		WillReturnResult(
-			sqlmock.NewResult(1, 1), // Return the mock UUID as the inserted id
+			sqlmock.NewResult(1, 1), // Return the mocks UUID as the inserted id
 		)
 
 	err = repo.Save(user, password)

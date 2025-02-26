@@ -27,4 +27,6 @@ type ListInput struct {
 	Link        string
 	Name        string
 	Description string
+	Page        int
+	Size        int
 }

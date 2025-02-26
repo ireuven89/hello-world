@@ -1,4 +1,4 @@
-package item
+package itemming
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	"github.com/ireuven89/hello-world/backend/item/model"
+	"github.com/ireuven89/hello-world/backend/itemming/model"
 )
 
 type GetItemRequest struct {

@@ -1,4 +1,4 @@
-package users
+package userring
 
 import (
 	"database/sql"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/ido50/sqlz"
+
 	"github.com/ireuven89/hello-world/backend/environment"
 )
 
@@ -15,7 +16,7 @@ func MustNewDB() (*sqlz.DB, string, error) {
 		User:   environment.Variables.UsersDbUser,
 		Passwd: environment.Variables.UsersDbPassword,
 		Addr:   environment.Variables.UsersDbHost,
-		DBName: "users",
+		DBName: "userring",
 		Net:    "tcp",
 	}
 	add := cfg.FormatDSN()
@@ -35,7 +36,7 @@ func MustNewDB() (*sqlz.DB, string, error) {
 	}
 
 	//set migration dir
-	migrationDir, err := filepath.Abs("./db/migrations/users")
+	migrationDir, err := filepath.Abs("./db/migrations/userring")
 
 	if err != nil {
 		return nil, "", err

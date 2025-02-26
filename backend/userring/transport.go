@@ -1,4 +1,4 @@
-package users
+package userring
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/labstack/gommon/log"
 
-	"github.com/ireuven89/hello-world/backend/users/model"
+	"github.com/ireuven89/hello-world/backend/userring/model"
 )
 
 type Router interface {
@@ -34,8 +34,8 @@ type Transport struct {
 }
 
 func (t *Transport) ListenAndServe(port string) {
-	log.Printf("Starting server on port %s...", port)
-	err := http.ListenAndServe(":"+port, t.router)
+	log.Printf("Starting user server on port %s...", port)
+	err := http.ListenAndServe("0.0.0.0:"+port, t.router)
 	if err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
@@ -72,11 +72,11 @@ func RegisterRoutes(router *httprouter.Router, s Service) {
 		encodeDeleteUserResponse,
 	)
 
-	router.Handler(http.MethodGet, "/users/:id", getUserHandler)
-	router.Handler(http.MethodGet, "/users", getUsersHandler)
-	router.Handler(http.MethodPost, "/users", createUserHandler)
-	router.Handler(http.MethodPut, "/users", updateUserHandler)
-	router.Handler(http.MethodDelete, "/users/:id", deleteUserHandler)
+	router.Handler(http.MethodGet, "/userring/:id", getUserHandler)
+	router.Handler(http.MethodGet, "/userring", getUsersHandler)
+	router.Handler(http.MethodPost, "/userring", createUserHandler)
+	router.Handler(http.MethodPut, "/userring", updateUserHandler)
+	router.Handler(http.MethodDelete, "/userring/:id", deleteUserHandler)
 }
 
 type GetUserRequest struct {
