@@ -12,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labstack/gommon/log"
 	"github.com/sethvargo/go-retry"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -48,24 +47,6 @@ const (
 	maxRetries = 3
 )
 
-type taskStatusEnum struct {
-	Pending    string
-	Completed  string
-	InProgress string
-	Failed     string
-}
-
-var taskStatus = taskStatusEnum{
-	Pending:    "PENDING",
-	InProgress: "IN_PROGRESS",
-	Completed:  "COMPLETED",
-	Failed:     "FAILED",
-}
-
-func (s *Service) AddTask(task model.MigrationTask) {
-	s.tasks = append(s.tasks, task)
-}
-
 func NewService(logger *zap.Logger, migrationsDB *mongo.Database, queuesDB *mongo.Database, internalService InternalService) *Service {
 	httpClient := http.Client{Timeout: 10 * time.Millisecond}
 
@@ -75,17 +56,6 @@ func NewService(logger *zap.Logger, migrationsDB *mongo.Database, queuesDB *mong
 		queuesDB:        queuesDB,
 		internalService: internalService,
 		httpclient:      &httpClient,
-	}
-}
-
-func (s *Service) worker(tasks <-chan model.MigrationTask, errCh chan<- error, wg *sync.WaitGroup, fn func(t model.MigrationTask) error) {
-	defer wg.Done()
-	for task := range tasks {
-		if err := fn(task); err != nil {
-			errCh <- err
-		} else {
-			log.Printf("Processed migration task: %s\n", task.Name)
-		}
 	}
 }
 
@@ -124,7 +94,7 @@ func (s *Service) ProcessTasks(ctx context.Context, migrationName string) {
 				t.Status = model.TaskInProgress.String()
 				s.updateTask(ctx, &t, queueName)
 				if migration.Type == model.Http.String() {
-					s.processTaskHttp(ctx, &t, queueName)
+					s.processTaskHttp(ctx, &t, migration)
 				} else {
 					s.processTaskInternal(ctx, &t, queueName)
 				}
@@ -235,7 +205,7 @@ func (s *Service) getTasksLeft(ctx context.Context, queue string) int64 {
 }
 
 // processTask - process with max retries
-func (s *Service) processTaskHttp(ctx context.Context, task *model.MigrationTask, queue string) {
+func (s *Service) processTaskHttp(ctx context.Context, task *model.MigrationTask, migration model.Migration) {
 	//execute
 	err := retry.Do(ctx, retry.WithMaxRetries(maxRetries, retry.NewConstant(500*time.Millisecond)), func(ctx context.Context) error {
 		body, err := json.Marshal(task.HttpBody)
@@ -243,20 +213,25 @@ func (s *Service) processTaskHttp(ctx context.Context, task *model.MigrationTask
 			return retry.RetryableError(err)
 		}
 
-		req, err := http.NewRequest(task.HttpMethod, task.HttpEndpoint, bytes.NewReader(body))
+		req, err := http.NewRequest(migration.HttpMethod, s.buildUrl(migration.HttpEndpoint, task.HttpParams), bytes.NewReader(body))
 		if err != nil {
 			return retry.RetryableError(err)
 		}
 		resp, err := s.httpclient.Do(req)
 
-		if err != nil || slices.Contains(httpStatues, resp.StatusCode) {
+		if err != nil {
 			s.logger.Error("failed executing task retry", zap.Error(err), zap.String("task", task.Name))
 			return retry.RetryableError(err)
 		}
 
+		if !slices.Contains(httpStatues, resp.StatusCode) {
+			s.logger.Error("failed executing task ", zap.String("task", task.Name), zap.Any("status code", resp.StatusCode))
+			return retry.RetryableError(fmt.Errorf("failed execute with status code: %v", resp.StatusCode))
+		}
+
 		//if finished ok - update completed
 		task.Status = model.TaskCompleted.String()
-		s.updateTask(ctx, task, queue)
+		s.updateTask(ctx, task, migration.QueueName)
 		return nil
 	})
 
@@ -264,9 +239,9 @@ func (s *Service) processTaskHttp(ctx context.Context, task *model.MigrationTask
 	if err != nil {
 		task.ErrorMessage = err.Error()
 		task.Status = model.TaskFailed.String()
-		s.updateTask(ctx, task, queue)
-		if task.HttpRollBack != "" {
-			req, err := http.NewRequest(task.HttpMethod, task.HttpRollBack, nil)
+		s.updateTask(ctx, task, migration.QueueName)
+		if migration.HttpRollBack != "" {
+			req, err := http.NewRequest(migration.HttpRollBackMethod, migration.HttpRollBack, nil)
 			if err != nil {
 				s.logger.Warn("failed rollback")
 			}
@@ -331,7 +306,7 @@ func (s *Service) updateTask(ctx context.Context, task *model.MigrationTask, que
 
 	updatedResult, err := s.queuesDB.
 		Collection(queueName).
-		UpdateOne(ctx, bson.M{"_id": task.ID}, bson.M{"$set": bson.M{"status": task.Status}})
+		UpdateMany(ctx, bson.M{"_id": task.ID}, bson.M{"$set": bson.M{"status": task.Status}})
 
 	if err != nil {
 		s.logger.Error("failed updating task", zap.Error(err), zap.String("name", task.Name))

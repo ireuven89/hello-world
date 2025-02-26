@@ -7,12 +7,17 @@ import (
 )
 
 type Migration struct {
-	ID            primitive.ObjectID `bson:"_id"`
-	Type          string             `bson:"type"`
-	MigrationName string             `bson:"name"`
-	QueueName     string             `bson:"queueName"`
-	Status        string             `bson:"status"`
-	CreatedAt     time.Time          `bson:"createdAt"`
+	ID                 primitive.ObjectID `bson:"_id"`
+	Type               string             `bson:"type"`
+	MigrationName      string             `bson:"name"`
+	QueueName          string             `bson:"queueName"`
+	NumOfThreads       int                `bson:"numOfThreads"`
+	HttpEndpoint       string             `bson:"httpExecute"`
+	HttpMethod         string             `bson:"httpMethod"`
+	HttpRollBack       string             `bson:"httpRollBack"`
+	HttpRollBackMethod string             `bson:"httpRollBackMethod"`
+	Status             string             `bson:"status"`
+	CreatedAt          time.Time          `bson:"createdAt"`
 }
 
 type MigrationType int

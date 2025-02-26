@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/julienschmidt/httprouter"
@@ -58,9 +59,18 @@ func RegisterRoutes(router *httprouter.Router, s Service) {
 		encodeVerifyResponse,
 	)
 
+	migrateHandler := kithttp.NewServer(
+		MakeEndpointMigrate(s),
+		decodeMigrateRequest,
+		kithttp.EncodeJSONResponse,
+	)
+
 	router.Handler(http.MethodPost, "/register", registerUserHandler)
 	router.Handler(http.MethodPost, "/login", loginUserHandler)
 	router.Handler(http.MethodPost, "/verify", verifyTokenHandler)
+	router.Handler(http.MethodPost, "/migrate/{time}", migrateHandler)
+	router.Handler(http.MethodPost, "/migrate/stop", migrateHandler)
+
 }
 
 func decodeRegisterRequest(ctx context.Context, r *http.Request) (request interface{}, err error) {
@@ -107,6 +117,20 @@ func decodeVerifyRequest(ctx context.Context, r *http.Request) (request interfac
 	}
 
 	return req, nil
+}
+
+func decodeMigrateRequest(ctx context.Context, r *http.Request) (request interface{}, err error) {
+	var req MigrateRequest
+	timeString := r.PathValue("time")
+	startTime, err := time.Parse("2025-02-23T15:30:00+02:00", timeString)
+
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, err
+	}
+
+	return MigrateRequest{
+		time: startTime,
+	}, nil
 }
 
 func encodeVerifyResponse(ctx context.Context, writer http.ResponseWriter, response interface{}) error {

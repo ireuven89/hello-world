@@ -37,14 +37,10 @@ func TestRepo_Save(t *testing.T) {
 	password := "password"
 	repo := New(logger, sqlzMock)
 
-	mock.ExpectExec("INSERT INTO userring ").
+	mock.ExpectExec("INSERT INTO userring").
 		WithArgs(sqlmock.AnyArg(), password, user). // Matching any argument for ID
 		WillReturnResult(
-<<<<<<< Updated upstream
-			sqlmock.NewResult(1, 1), // Return the mock UUID as the inserted id
-=======
 			sqlmock.NewResult(1, 1), // Return the mocks UUID as the inserted id
->>>>>>> Stashed changes
 		)
 
 	err = repo.Save(user, password)

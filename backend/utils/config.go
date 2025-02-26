@@ -15,6 +15,7 @@ type Config struct {
 
 type DataBaseConnection struct {
 	Host     string `json:"host"`
+	GroupId  string `bson:"groupId"`
 	UserName string `json:"user"`
 	Password string `json:"password"`
 }

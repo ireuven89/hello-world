@@ -163,6 +163,19 @@ services:
       retries: 3
       interval: 30s
       start_period: 10s
+  bidders-db:
+    image: mysql
+    container_name: bidders_db
+    ports:
+      - "3311:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${BIDDERS_DB_PASSWORD}
+      - MYSQL_DATABASE=bidders
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u root --password=${MYSQL_ROOT_PASSWORD}
+      start_period: 10s
+      interval: 30s
+      retries: 3
   mongo:
     image: mongo:latest
     container_name: mongo

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -67,4 +68,35 @@ func (r *Repo) Find(username string) (model.User, error) {
 		Username: result.Username,
 		Password: result.Password,
 	}, nil
+}
+
+func (r *Repo) FindAll(page model.Page) ([]model.User, error) {
+	var result []model.User
+
+	q := r.db.Select("id", "name", "password").
+		Limit(page.PageSize).
+		Offset(page.Page)
+
+	if err := q.GetAll(&result); err != nil {
+		r.logger.Error("failed to fetch users")
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (r *Repo) Delete(id string) error {
+	q := r.db.DeleteFrom("auth").Where(sqlz.Eq("id", id))
+
+	res, err := q.Exec()
+
+	if err != nil {
+		return err
+	}
+
+	if row, err := res.RowsAffected(); err != nil || row == 0 {
+		return errors.New("failed deleting")
+	}
+
+	return nil
 }

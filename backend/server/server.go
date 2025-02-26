@@ -10,15 +10,14 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/ireuven89/hello-world/backend/itemming"
-	itemrepo "github.com/ireuven89/hello-world/backend/itemming/repository"
-
 	"github.com/ireuven89/hello-world/backend/authenticating"
 	authrepo "github.com/ireuven89/hello-world/backend/authenticating/repository"
 	"github.com/ireuven89/hello-world/backend/aws"
 	"github.com/ireuven89/hello-world/backend/db"
 	"github.com/ireuven89/hello-world/backend/elastic"
 	"github.com/ireuven89/hello-world/backend/environment"
+	"github.com/ireuven89/hello-world/backend/itemming"
+	itemrepo "github.com/ireuven89/hello-world/backend/itemming/repository"
 	"github.com/ireuven89/hello-world/backend/publishing"
 	"github.com/ireuven89/hello-world/backend/redis"
 	"github.com/ireuven89/hello-world/backend/routes"
@@ -128,25 +127,6 @@ func New() (*Server, error) {
 	userTransport := userring.NewTransport(usersService, userRouter)
 	go userTransport.ListenAndServe(config.ServicePort)
 	logger.Info("starting auth service...")
-	//biddering
-	/*bidderConfig, err := utils.LoadConfig("biddering", os.Getenv("ENV"))
-	if err != nil {
-		return nil, err
-	}
-	bidderDb, dir, err := biddering.MustNewDB(bidderConfig.Databases["mysql"])
-	if err != nil {
-		return nil, err
-	}
-	migration := db.New(bidderDb, logger, dir)
-	if err = migration.Run(); err != nil {
-		return nil, err
-	}
-	bidderRepo := biddering.NewRepository(bidderDb, logger, redisClient)
-	bidderService := biddering.NewService(bidderRepo, logger)
-	bidderRoute := httprouter.New()
-	bidderTransport := biddering.NewTransport(bidderService, bidderRoute)
-	logger.Info("starting auth service...")
-	go bidderTransport.ListenAndServe(bidderConfig.ServicePort)*/
 
 	//remoting
 	echoServer := echo.New()

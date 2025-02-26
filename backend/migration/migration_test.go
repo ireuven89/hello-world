@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/labstack/gommon/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -75,6 +78,50 @@ func setupInMemoryMongoDB() (*mongo.Client, *mongodb.MongoDBContainer, error) {
 	return client, contianer, nil
 }
 
+func executeHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	fail := vars["fail"]
+
+	if fail == "true" {
+		fmt.Printf("fail http execute\n")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("failed execute"))
+		return
+	}
+
+	fmt.Printf("success http execute\n")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("success execute"))
+}
+
+func rollbackHandler(w http.ResponseWriter, r *http.Request) {
+	// Extract path parameter 'fail'
+	vars := mux.Vars(r)
+	fail := vars["fail"]
+
+	if fail == "true" {
+		fmt.Printf("fail http rollback\n")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("failed rollback"))
+		return
+	}
+
+	fmt.Printf("success http rollback\n")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("success rollback"))
+}
+
+func setupInMemoryHttpServer() *httptest.Server {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/execute/{fail}", executeHandler)
+	mux.HandleFunc("/rollback/{fail}", rollbackHandler)
+
+	server := httptest.NewServer(mux)
+
+	return server
+}
+
 func TestFailedConnectToMongo(t *testing.T) {
 	_, err := MustNewDB(utils.DataBaseConnection{Host: "empty-host"})
 
@@ -84,6 +131,7 @@ func TestFailedConnectToMongo(t *testing.T) {
 func TestProcessTasksExternal(t *testing.T) {
 	// Set up in-memory MongoDB client
 	client, container, err := setupInMemoryMongoDB()
+	httpClient := setupInMemoryHttpServer()
 	if err != nil {
 		t.Fatalf("Failed to set up in-memory MongoDB: %v", err)
 	}
@@ -97,16 +145,25 @@ func TestProcessTasksExternal(t *testing.T) {
 	migration := "test-migration"
 	queueName := "test-queue"
 	logger := zaptest.NewLogger(t)
+	executeEndpoint := httpClient.URL + "/execute"
+	rollbackEndpoint := httpClient.URL + "/rollback"
 
 	// Create a new Service instance with the in-memory MongoDB client
 	service := NewService(logger, migrationDB, queuesDB, nil)
 
 	// Insert some test data into the MongoDB collection
 	_, err = queueCollection.InsertMany(context.Background(), []interface{}{
-		bson.M{"queueName": queueName, "status": model.Pending.String(), "taskID": "task1"},
-		bson.M{"queueName": queueName, "status": model.Pending.String(), "taskID": "task2"},
+		bson.M{"queueName": queueName, "status": model.Pending.String(),
+			"taskID":     "task1",
+			"httpParams": []string{"false"}, "rollbackParams": []string{"false"}},
+		bson.M{"queueName": queueName, "status": model.Pending.String(),
+			"taskID":     "task2",
+			"httpParams": []string{"false"}, "rollbackParams": []string{"false"}},
 	})
-	id, err := migrationCollection.InsertOne(context.Background(), bson.M{"name": migration, "status": model.Pending.String(), "queueName": "test-queue", "type": model.Http.String()})
+	id, err := migrationCollection.InsertOne(context.Background(), bson.M{"name": migration, "status": model.Pending.String(),
+		"queueName": "test-queue", "type": model.Http.String(),
+		"httpEndpoint": executeEndpoint, "httpMethod": http.MethodGet, "rollbackEndpoint": rollbackEndpoint, "rollbackMethod": http.MethodGet,
+	})
 	if err != nil {
 		t.Fatalf("Failed to insert test data: %v", err)
 	}
@@ -125,16 +182,14 @@ func TestProcessTasksExternal(t *testing.T) {
 	processedCount += 2 // We know that we have inserted 2 tasks
 
 	// Verify the tasks have been processed
-	taskCount1, err := queueCollection.CountDocuments(context.Background(), bson.M{})
 	tasks, err := queueCollection.Find(context.Background(), bson.M{})
-	taskCount, err := queueCollection.CountDocuments(context.Background(), bson.M{"status": model.TaskFailed.String()})
+	taskCount, err := queueCollection.CountDocuments(context.Background(), bson.M{"status": model.TaskCompleted.String()})
 	if err != nil {
 		t.Fatalf("Failed to count InProgress tasks: %v", err)
 	}
 
 	var parsedTasks []model.MigrationTask
 	tasks.All(context.Background(), &parsedTasks)
-	assert.True(t, taskCount1 > 0)
 	assert.Equal(t, taskCount, int64(processedCount), "Tasks should be marked as 'InProgress'")
 
 	// Verify migration status was updated
@@ -240,6 +295,45 @@ func TestInternalServiceExecute(t *testing.T) {
 		assert.Equal(t, rollbackCalled, test.rollbackCalled, "rollback call time failed")
 	}
 
+}
+
+func TestMigrationStop(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	mongoclient, container, err := setupInMemoryMongoDB()
+	httpClient := setupInMemoryHttpServer()
+
+	assert.NoError(t, err)
+	defer container.Terminate(context.Background())
+
+	migrationDB := mongoclient.Database("migrations")
+	queuesDB := mongoclient.Database("queues")
+	migrationCollection := migrationDB.Collection("migrations")
+	queuesCollection := queuesDB.Collection("test-queues")
+	executeEndpoint := httpClient.URL + "/execute"
+	rollbackEndpoint := httpClient.URL + "/rollback"
+
+	migrationCollection.InsertOne(context.Background(), bson.M{"name": "migration", "status": model.Pending.String(),
+		"queueName": "test-queue", "type": model.Http.String(),
+		"httpEndpoint": executeEndpoint, "httpMethod": http.MethodGet, "rollbackEndpoint": rollbackEndpoint, "rollbackMethod": http.MethodGet,
+	})
+
+	queuesCollection.InsertOne(context.Background(), bson.M{})
+
+	service := NewService(logger, migrationDB, queuesDB, NewIMockInternalService())
+
+	service.setSkipUpdate(true)
+	service.stopMigration(context.Background(), "migration")
+
+}
+
+func insertDummyTasks(count int, collection mongo.Collection) {
+	var tasks []bson.M
+
+	for i := 0; i < count; i++ {
+		tasks = append(tasks, bson.M{"name": fmt.Sprintf("dummy %v", i),
+			"status": model.Pending.String(),
+		})
+	}
 }
 
 func (mis *MockInternalService) Execute(print interface{}) error {

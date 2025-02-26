@@ -3,6 +3,7 @@ package authenticating
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-kit/kit/endpoint"
 )
@@ -83,5 +84,21 @@ func MakeEndpointVerify(s Service) endpoint.Endpoint {
 		return VerifyResponseModel{
 			User: user,
 		}, nil
+	}
+}
+
+type MigrateRequest struct {
+	time time.Time
+}
+
+func MakeEndpointMigrate(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(time.Time)
+		err = s.Migrate(ctx, req)
+		if err != nil {
+			return nil, fmt.Errorf("MakeEndpointGetUser: %v", err)
+		}
+
+		return nil, nil
 	}
 }
